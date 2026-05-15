@@ -19,3 +19,5 @@
 *.jks
 .claude
 .idea
+bili-sdk
+AGENTS.md
