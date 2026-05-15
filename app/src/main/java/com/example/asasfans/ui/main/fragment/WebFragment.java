@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 import com.tencent.smtt.sdk.DownloadListener;
 import android.webkit.URLUtil;
+import com.tencent.smtt.sdk.CookieManager;
 import com.tencent.smtt.sdk.ValueCallback;
 import com.tencent.smtt.sdk.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -69,12 +70,15 @@ public class WebFragment extends Fragment {
     private ProgressBar progressBar;
     private long exitTime = 0;
     private String url = "https://cnki.asoul.us.kg/";
+    private static final String CALENDAR_HOST = "asoul.love";
+    private static final String CALENDAR_CHROME_USER_AGENT = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
     private static final int REQUEST_CODE_FILE_CHOOSER = 1;
 
     private ValueCallback<Uri> mUploadCallbackForLowApi;
     private ValueCallback<Uri[]> mUploadCallbackForHighApi;
 
     private Boolean inBottom = true;
+    private boolean calendarFallbackOpened = false;
 
     private WebResourceResponse webResourceResponse = null;
     private String proxyUrl;
@@ -178,6 +182,7 @@ public class WebFragment extends Fragment {
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
+        configureCalendarCompatibility(webSettings);
 //        webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 //        webSettings.setMixedContentMode(WebSettings.);
 
@@ -311,6 +316,11 @@ public class WebFragment extends Fragment {
             @Override
             public void onReceivedError(WebView view, com.tencent.smtt.export.external.interfaces.WebResourceRequest request, com.tencent.smtt.export.external.interfaces.WebResourceError error) {
                 super.onReceivedError(view, request, error);
+                String failedUrl = request == null ? url : request.getUrl().toString();
+                if (isMainFrameRequest(request) && isCalendarUrl(failedUrl)) {
+                    openCalendarInBrowserAfterError(failedUrl);
+                    return;
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     return;
                 }
@@ -348,6 +358,18 @@ public class WebFragment extends Fragment {
         return view;
     }
 
+    private void configureCalendarCompatibility(WebSettings webSettings) {
+        if (!isCalendarUrl(url)) {
+            return;
+        }
+        webSettings.setUserAgentString(CALENDAR_CHROME_USER_AGENT);
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.setAcceptThirdPartyCookies(webView, true);
+        }
+    }
+
     public void onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && webView.canGoBack()) {
             Log.i("web:onKeyDown", "canGoBack: ");
@@ -377,6 +399,35 @@ public class WebFragment extends Fragment {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         intent.addCategory(Intent.CATEGORY_BROWSABLE);
         getActivity().startActivity(intent);
+    }
+
+    private boolean isCalendarUrl(String targetUrl) {
+        if (TextUtils.isEmpty(targetUrl)) {
+            return false;
+        }
+        String host = Uri.parse(targetUrl).getHost();
+        return host != null && (CALENDAR_HOST.equalsIgnoreCase(host) || host.endsWith("." + CALENDAR_HOST));
+    }
+
+    private boolean isMainFrameRequest(WebResourceRequest request) {
+        return request == null || request.isForMainFrame();
+    }
+
+    private void openCalendarInBrowserAfterError(String failedUrl) {
+        if (calendarFallbackOpened) {
+            return;
+        }
+        calendarFallbackOpened = true;
+        progressBar.setVisibility(View.GONE);
+        try {
+            if (getActivity() == null) {
+                return;
+            }
+            downloadByBrowser(failedUrl);
+            Toast.makeText(getActivity(), "日历站点在当前 WebView 中加载失败，已尝试用浏览器打开", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(getActivity(), "日历站点加载失败，请稍后重试或用浏览器打开", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void downloadBySystem(String url, String contentDisposition, String mimeType) {
