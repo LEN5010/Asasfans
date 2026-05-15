@@ -4,6 +4,8 @@ Asasfans 是一个面向 A-SOUL 粉丝的 Android 客户端，整合了视频浏
 
 本项目保留了早期开源项目 [A-SoulFan/as-as-fans](https://github.com/A-SoulFan/as-as-fans) 的历史来源，后续由当前仓库继续维护和重构，并继续遵循 GPL-2.0 协议发布。
 
+感谢 jiarandiana0307 的[Fork](https://github.com/jiarandiana0307/as-as-fans)在去年对项目的维护和更新
+
 Asasfans 是非官方粉丝项目，与 Bilibili、A-SOUL 及相关公司没有官方关联。
 
 ## 功能
