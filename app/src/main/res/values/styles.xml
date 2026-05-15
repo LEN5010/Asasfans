@@ -84,18 +84,4 @@
         <item name="android:textColor">@drawable/txt_select_selector</item>
     </style>
 
-    <style name="BottomNavTextActive" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:textSize">10sp</item>
-        <item name="fontWeight">500</item>
-    </style>
-
-    <style name="BottomNavTextInactive" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:textSize">10sp</item>
-    </style>
-
-    <style name="BottomNavActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">@color/md_active_indicator</item>
-        <item name="android:width">64dp</item>
-        <item name="android:height">32dp</item>
-    </style>
 </resources>

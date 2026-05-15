@@ -45,8 +45,6 @@ import com.example.asasfans.R;
 import com.example.asasfans.ui.main.VideoProxyManager;
 import com.example.asasfans.util.SystemUtils;
 
-
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -77,9 +75,6 @@ public class WebFragment extends Fragment {
     private ValueCallback<Uri[]> mUploadCallbackForHighApi;
 
     private Boolean inBottom = true;
-    private String songName = "";
-    private String singerName = "";
-    private String currentSongTime = "";
 
     private WebResourceResponse webResourceResponse = null;
     private String proxyUrl;
@@ -224,15 +219,6 @@ public class WebFragment extends Fragment {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, com.tencent.smtt.export.external.interfaces.WebResourceRequest request) {
                 Log.i("shouldInterceptRequest:getUrl", request.getUrl().toString());
-                if (request.getUrl().toString().startsWith("https://api.asoul.us.kg/studio")){
-
-                    webView.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateName();
-                        }
-                    });
-                }
                 /*
                 if (request.getUrl().toString().startsWith("https://asbbs-static-01.kzmidc.workers.dev/?file=/uploads/files/1/banner_1646556711136.mp4") ||
                         request.getUrl().toString().startsWith("https://as-archive-cn-01.a-soul.fans/") ||
@@ -320,9 +306,6 @@ public class WebFragment extends Fragment {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 progressBar.setVisibility(View.GONE);
-                if (inBottom){
-                    updateName();
-                }
             }
 
             @Override
@@ -359,143 +342,10 @@ public class WebFragment extends Fragment {
             }
         });
 
-//        NotificationManager notificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
-//        String channelId = "notification";
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {//适配一下高版本
-//            NotificationChannel channel = new NotificationChannel(channelId,
-//                    "listen",
-//                    NotificationManager.IMPORTANCE_DEFAULT);
-//            channel.enableLights(false); //是否在桌面icon展示小红点
-//            channel.setLightColor(Color.RED); //小红点颜色
-//            channel.setSound(null, null);//关了通知默认提示音
-//            channel.setShowBadge(false); //是否在久按桌面图标时显示此渠道的通知
-//            notificationManager.createNotificationChannel(channel);
-//        }
-//        NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity(), channelId)
-//                .setSmallIcon(R.mipmap.ic_launcher)//这玩意在通知栏上显示一个logo
-//                .setCategory(CATEGORY_MESSAGE)
-//                .setDefaults(DEFAULT_ALL)
-//                .setOngoing(true);
-//        //点击通知栏跳转的activity
-//        Intent intent = new Intent(getActivity(), TestActivity.class);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 0, intent,
-//                PendingIntent.FLAG_UPDATE_CURRENT);
-//        builder.setAutoCancel(false);//点击不让消失
-//        builder.setSound(null);//关了通知默认提示音
-//        builder.setPriority(PRIORITY_MAX);//咱们通知很重要
-//        builder.setVibrate(null);//关了车震
-//        builder.setContentIntent(pendingIntent);//整个点击跳转activity安排上
-//        builder.setOnlyAlertOnce(false);
-//        RemoteViews remoteViews = initNotifyView();
-//        builder.setContent(remoteViews);//把自定义view放上
-//        builder.setCustomBigContentView(remoteViews);//把自定义view放上
-//        Notification notification = builder.build();
-//        notification.flags |= FLAG_ONGOING_EVENT;
-//        notification.flags |= Notification.FLAG_NO_CLEAR;//不让手动清除 通知栏常驻
-//        notification.sound = null;//关了通知默认提示音
-//        notificationManager.notify(1, notification);
-
         webView.loadUrl(url);
 //        webView.loadUrl("https://asoul.cloud/pic");
 //        webView.loadUrl("https://liulanmi.com/labs/core.html");
         return view;
-    }
-
-//    private RemoteViews initNotifyView() {
-//        String packageName = getActivity().getPackageName();
-//        RemoteViews remoteView = new RemoteViews(packageName, R.layout.song_player);
-//        remoteView.setImageViewResource(R.id.widget_album, R.drawable.icon_asoul);
-//        remoteView.setTextViewText(R.id.widget_title, "标题内容");
-//        remoteView.setTextViewText(R.id.widget_artist, "小标题内容");
-//
-//        Intent prv = new Intent(getActivity(), XMPlayerReceiver.class);//播放上一首
-//        prv.setAction(PLAY_PRE);
-//        PendingIntent intent_prev = PendingIntent.getBroadcast(getActivity(), 1, prv,
-//                PendingIntent.FLAG_UPDATE_CURRENT);
-//        remoteView.setOnClickPendingIntent(R.id.widget_prev, intent_prev);
-//
-//
-//        Intent next = new Intent(getActivity(), XMPlayerReceiver.class);//播放下一首
-//        next.setAction(PLAY_NEXT);
-//        PendingIntent intent_next = PendingIntent.getBroadcast(getActivity(), 2, next,
-//                PendingIntent.FLAG_UPDATE_CURRENT);
-//        remoteView.setOnClickPendingIntent(R.id.widget_next, intent_next);
-//
-//
-//        Intent startpause = new Intent(getActivity(), XMPlayerReceiver.class);//暂停
-//        startpause.setAction(PLAY_PAUSE);
-//        PendingIntent intent_pause = PendingIntent.getBroadcast(getActivity(), 3, startpause,
-//                PendingIntent.FLAG_UPDATE_CURRENT);
-//        remoteView.setOnClickPendingIntent(R.id.widget_play, intent_pause);
-//
-//        Intent startplay = new Intent(getActivity(), XMPlayerReceiver.class);//播放
-//        startplay.setAction(PLAY_PLAY);
-//        PendingIntent intent_play = PendingIntent.getBroadcast(getActivity(), 4, startplay,
-//                PendingIntent.FLAG_UPDATE_CURRENT);
-//        remoteView.setOnClickPendingIntent(R.id.widget_play, intent_play);
-//        return remoteView;
-//    }
-//
-    public void clickPreviousSong(){
-        if (webView == null){
-            Toast.makeText(getActivity(), "还没有初始化成功", Toast.LENGTH_SHORT).show();
-        }else {
-            webView.loadUrl("javascript:document.getElementsByClassName(\"prevButton playButtons\")[0].click();");
-        }
-    }
-    public void clickOtherInfoButton(){
-        if (webView == null){
-            Toast.makeText(getActivity(), "还没有初始化成功", Toast.LENGTH_SHORT).show();
-        }else {
-            webView.loadUrl("javascript:document.getElementsByClassName(\"detailsButton otherButtons\")[0].click();");
-        }
-    }
-    public void clickPlaySong(){
-        if (webView == null){
-            Toast.makeText(getActivity(), "还没有初始化成功", Toast.LENGTH_SHORT).show();
-        }else {
-            webView.loadUrl("javascript:document.getElementsByClassName(\"playButton playButtons\")[0].click();");
-        }
-    }
-    public void clickNextSong(){
-        if (webView == null){
-            Toast.makeText(getActivity(), "还没有初始化成功", Toast.LENGTH_SHORT).show();
-        }else {
-            webView.loadUrl("javascript:document.getElementsByClassName(\"nextButton playButtons\")[0].click();");
-//            webView.loadUrl("javascript:document.getElementByXPath(\"//*[@id=\"player\"]/div[1]/div[2]/div[1]/div[2]/div[3]\").click();");
-        }
-    }
-
-    public String getCurrentSongTime(){
-        webView.evaluateJavascript("document.getElementsByClassName(\"currentTime\")[0].innerHTML;"
-                , new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String value) {
-//                        Log.i(SystemUtils.trimFirstAndLastChar(value, (char) 34), "getCurrentSongTime: ");
-//                        singerName = SystemUtils.trimFirstAndLastChar(value, (char) 34);
-                        currentSongTime = value;
-                    }
-                });
-        return currentSongTime;
-    }
-
-    public void updateName(){
-        webView.evaluateJavascript("document.getElementsByClassName(\"singer\")[0].innerHTML;"
-                , new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String value) {
-                        Log.i(SystemUtils.trimFirstAndLastChar(value, (char) 34), "getSingerNameOnReceiveValue: ");
-                        singerName = SystemUtils.trimFirstAndLastChar(value, (char) 34);
-                    }
-                });
-        webView.evaluateJavascript("document.getElementsByClassName(\"songName\")[0].childNodes[0].innerHTML;"
-                , new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String value) {
-                        Log.i(SystemUtils.trimFirstAndLastChar(value, (char) 34), "getSingerNameOnReceiveValue: ");
-                        songName = SystemUtils.trimFirstAndLastChar(value, (char) 34);
-                    }
-                });
     }
 
     public void onKeyDown(int keyCode, KeyEvent event) {

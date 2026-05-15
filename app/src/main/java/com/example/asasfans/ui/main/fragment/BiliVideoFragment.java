@@ -257,7 +257,7 @@ public class BiliVideoFragment extends Fragment {
                     }
                     break;
                 case NETWORK_ERROR:
-                    //这里因为在高级搜索界面可能会有人快速切换页面，因此在fragment视图消失时手动强制关闭了线程池和handle，
+                    // Fragment 视图消失时会手动关闭线程池和 handler，
                     // 但是网络请求会报java.io.InterruptedIOException，之前在异常里并没有区分，全走网络错误了，
                     // 先这样办，能解决问题，以后再加异常类型区分
                     refreshLayout.setRefreshing(false);
