@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -36,6 +37,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.asasfans.data.GithubVersionBean;
 import com.example.asasfans.data.TabData;
+import com.example.asasfans.data.VideoPlaybackModeStore;
 import com.example.asasfans.ui.main.ConfigActivity;
 import com.example.asasfans.ui.main.adapter.NewBottomPagerAdapter;
 import com.example.asasfans.ui.main.fragment.NewToolsFragment;
@@ -278,6 +280,7 @@ public class TestActivity extends AppCompatActivity {
 
     private void configureDrawerNavigation() {
         navigationView.setCheckedItem(R.id.nav_video);
+        updatePlaybackModeMenuItem();
         navigationView.setNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_video) {
@@ -292,6 +295,13 @@ public class TestActivity extends AppCompatActivity {
                 selectPage(4);
             } else if (itemId == R.id.nav_lists) {
                 selectPage(5);
+            } else if (itemId == R.id.nav_play_mode) {
+                String mode = VideoPlaybackModeStore.toggle(TestActivity.this);
+                updatePlaybackModeMenuItem();
+                updateNavigationState(viewPager.getCurrentItem());
+                drawerLayout.closeDrawer(GravityCompat.START);
+                Toast.makeText(TestActivity.this, VideoPlaybackModeStore.menuTitle(mode), Toast.LENGTH_SHORT).show();
+                return false;
             } else if (itemId == R.id.nav_settings) {
                 drawerLayout.closeDrawer(GravityCompat.START);
                 startActivity(new Intent(TestActivity.this, ConfigActivity.class));
@@ -326,6 +336,13 @@ public class TestActivity extends AppCompatActivity {
         } else if (position == 5) {
             navigationView.setCheckedItem(R.id.nav_lists);
             topAppBar.setTitle(R.string.nav_lists);
+        }
+    }
+
+    private void updatePlaybackModeMenuItem() {
+        MenuItem playModeItem = navigationView.getMenu().findItem(R.id.nav_play_mode);
+        if (playModeItem != null) {
+            playModeItem.setTitle(VideoPlaybackModeStore.menuTitle(VideoPlaybackModeStore.getMode(this)));
         }
     }
 

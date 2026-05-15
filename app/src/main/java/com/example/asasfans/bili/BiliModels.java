@@ -208,4 +208,41 @@ public class BiliModels {
     public static class ReplyContent {
         public String message;
     }
+
+    public static class SpaceArchiveResponse extends BaseResponse {
+        public SpaceArchiveData data;
+    }
+
+    public static class SpaceArchiveData {
+        public SpaceArchiveList list;
+        public SpaceArchivePage page;
+    }
+
+    public static class SpaceArchiveList {
+        public List<SpaceArchiveVideo> vlist;
+    }
+
+    public static class SpaceArchivePage {
+        public int pn;
+        public int ps;
+        public int count;
+    }
+
+    public static class SpaceArchiveVideo {
+        public long aid;
+        public String author;
+        public String bvid;
+        public int comment;
+        public String copyright;
+        public long created;
+        public String description;
+        public String length;
+        public long mid;
+        public String pic;
+        public int play;
+        public String title;
+        public int typeid;
+        @SerializedName("video_review")
+        public int videoReview;
+    }
 }

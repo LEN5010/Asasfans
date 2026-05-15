@@ -30,6 +30,12 @@
     </group>
 
     <item
+        android:id="@+id/nav_play_mode"
+        android:checkable="false"
+        android:icon="@drawable/ic_video_dark"
+        android:title="@string/nav_play_mode_app" />
+
+    <item
         android:id="@+id/nav_settings"
         android:checkable="false"
         android:icon="@drawable/icon_config"

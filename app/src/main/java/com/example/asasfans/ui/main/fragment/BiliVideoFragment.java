@@ -238,9 +238,12 @@ public class BiliVideoFragment extends Fragment {
                             AdvancedSearchDataBean.DataBean.ResultBean bean = allResultBeans.get(i);
                             boolean matchesBlackWord = VideoListRules.matchesBlackWord(
                                     bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getTname(), blackWords);
+                            boolean matchesCarol = VideoListRules.isCarolRelated(
+                                    bean.getMid(), bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getName());
                             if (!searchInSQL(db, bean.getBvid(), "blackBvid", "bvid") &&
                                     !searchInSQL(db, String.valueOf(bean.getMid()), "blackMid", "mid") &&
-                                    !matchesBlackWord) {
+                                    !matchesBlackWord &&
+                                    !matchesCarol) {
                                 visiblePageBeans.add(bean);
                                 addVideoCount++;
                             }
@@ -335,9 +338,11 @@ public class BiliVideoFragment extends Fragment {
                 new String[] { str });
         while (cursor.moveToNext()) {
 //            Log.i(" bvid:", str + "在数据库已存在,return true");
+            cursor.close();
             return true;
         }
 //        Log.i(" bvid:", str + "在数据库不存在，return false");
+        cursor.close();
         return false;
     }
 

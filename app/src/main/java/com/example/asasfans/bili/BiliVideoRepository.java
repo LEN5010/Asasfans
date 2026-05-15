@@ -1,5 +1,7 @@
 package com.example.asasfans.bili;
 
+import com.example.asasfans.data.AdvancedSearchDataBean;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +15,7 @@ import java.util.Set;
 public class BiliVideoRepository {
     private static final String VIEW_URL = "https://api.bilibili.com/x/web-interface/wbi/view";
     private static final String PLAY_URL = "https://api.bilibili.com/x/player/wbi/playurl";
+    private static final String SPACE_ARCHIVE_URL = "https://api.bilibili.com/x/space/wbi/arc/search";
 
     private final BiliApiClient apiClient;
     private final BiliAuthRepository authRepository;
@@ -30,6 +33,20 @@ public class BiliVideoRepository {
         params.put("bvid", bvid);
         String url = BiliApiClient.appendQuery(VIEW_URL, wbiSigner.signToQuery(params));
         BiliModels.VideoViewResponse response = apiClient.get(url, videoReferer(bvid), BiliModels.VideoViewResponse.class);
+        ensureSuccess(response);
+        return response;
+    }
+
+    public BiliModels.SpaceArchiveResponse getUserArchiveVideos(long mid, int page, int pageSize) throws IOException {
+        ensureWbiKeys();
+        Map<String, String> params = new HashMap<>();
+        params.put("mid", String.valueOf(mid));
+        params.put("order", "pubdate");
+        params.put("pn", String.valueOf(Math.max(1, page)));
+        params.put("ps", String.valueOf(Math.max(1, pageSize)));
+        params.put("tid", "0");
+        String url = BiliApiClient.appendQuery(SPACE_ARCHIVE_URL, wbiSigner.signToQuery(params));
+        BiliModels.SpaceArchiveResponse response = apiClient.get(url, "https://space.bilibili.com/" + mid + "/video", BiliModels.SpaceArchiveResponse.class);
         ensureSuccess(response);
         return response;
     }
@@ -194,6 +211,58 @@ public class BiliVideoRepository {
         }
     }
 
+    public List<AdvancedSearchDataBean.DataBean.ResultBean> mapSpaceArchiveVideos(BiliModels.SpaceArchiveResponse response) {
+        List<AdvancedSearchDataBean.DataBean.ResultBean> videos = new ArrayList<>();
+        if (response == null || response.data == null || response.data.list == null || response.data.list.vlist == null) {
+            return videos;
+        }
+        for (BiliModels.SpaceArchiveVideo video : response.data.list.vlist) {
+            if (video != null && video.bvid != null && !video.bvid.isEmpty()) {
+                videos.add(mapSpaceArchiveVideo(video));
+            }
+        }
+        return videos;
+    }
+
+    public AdvancedSearchDataBean.DataBean.ResultBean mapSpaceArchiveVideo(BiliModels.SpaceArchiveVideo video) {
+        AdvancedSearchDataBean.DataBean.ResultBean result = new AdvancedSearchDataBean.DataBean.ResultBean();
+        result.setAid(video.aid);
+        result.setBvid(video.bvid);
+        result.setName(video.author == null ? "" : video.author);
+        result.setMid(video.mid);
+        result.setFace("");
+        result.setTid(video.typeid);
+        result.setTname("");
+        result.setCopyright(parseInt(video.copyright));
+        result.setTitle(video.title == null ? "" : video.title);
+        result.setDesc(video.description == null ? "" : video.description);
+        result.setPic(video.pic == null ? "" : video.pic);
+        result.setTag("");
+        result.setPubdate(safeTimestamp(video.created));
+        result.setDuration(String.valueOf(lengthToSeconds(video.length)));
+        result.setView(video.play);
+        result.setDanmaku(video.videoReview);
+        result.setReply(video.comment);
+        result.setFavorite(0);
+        result.setCoin(0);
+        result.setShare(0);
+        result.setLike(0);
+        result.setScore(0);
+        return result;
+    }
+
+    public static int lengthToSeconds(String length) {
+        if (length == null || length.trim().isEmpty()) {
+            return 0;
+        }
+        String[] parts = length.trim().split(":");
+        int seconds = 0;
+        for (String part : parts) {
+            seconds = seconds * 60 + parseInt(part);
+        }
+        return seconds;
+    }
+
     private BiliModels.PlayUrlResponse getPlayUrl(String bvid, Map<String, String> params) throws IOException {
         ensureWbiKeys();
         String url = BiliApiClient.appendQuery(PLAY_URL, wbiSigner.signToQuery(params));
@@ -227,5 +296,26 @@ public class BiliVideoRepository {
         if (response == null || response.code != 0) {
             throw new BiliException(response == null ? -1 : response.code, response == null ? "Bilibili API 请求失败" : response.message);
         }
+    }
+
+    private static int parseInt(String value) {
+        if (value == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static int safeTimestamp(long value) {
+        if (value > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        if (value < 0) {
+            return 0;
+        }
+        return (int) value;
     }
 }

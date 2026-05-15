@@ -26,4 +26,12 @@ public class VideoListRulesTest {
         assertEquals(1, VideoListRules.compareSubscribedUp(200L, 100L, subscribed));
         assertEquals(0, VideoListRules.compareSubscribedUp(100L, 100L, subscribed));
     }
+
+    @Test
+    public void isCarolRelated_checksMidAndTextFields() {
+        assertTrue(VideoListRules.isCarolRelated(351609538L, "标题", "简介", "tag", "up"));
+        assertTrue(VideoListRules.isCarolRelated(1L, "标题", "珈乐Carol 相关", "tag", "up"));
+        assertTrue(VideoListRules.isCarolRelated(1L, "标题", "简介", "tag", "Carol"));
+        assertFalse(VideoListRules.isCarolRelated(1L, "标题", "简介", "tag", "up"));
+    }
 }

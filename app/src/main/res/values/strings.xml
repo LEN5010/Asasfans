@@ -4,6 +4,7 @@
     <string name="tab_text_2">最新发布</string>
     <string name="tab_text_4">热门二创</string>
     <string name="tab_text_5">热门切片</string>
+    <string name="tab_text_subscribed_up">订阅UP</string>
 
 
     <string name="tab_bottom_1">视频</string>
@@ -16,6 +17,8 @@
     <string name="nav_account">账号</string>
     <string name="nav_lists">名单管理</string>
     <string name="nav_settings">设置</string>
+    <string name="nav_play_mode_app">播放模式：App播放</string>
+    <string name="nav_play_mode_external">播放模式：跳转B站</string>
     <string name="nav_header_subtitle">视频、账号、音乐、工具、日历和名单</string>
 
 
@@ -27,6 +30,7 @@
     <string name="video_description">视频简介</string>
     <string name="block_options">屏蔽选项</string>
     <string name="subscribe_this_up">订阅该UP</string>
+    <string name="unsubscribe_this_up">取消订阅</string>
     <string name="bili_account">Bilibili账号</string>
     <string name="bili_account_not_logged_in">未登录</string>
     <string name="bili_account_logged_in">已登录：%1$s</string>

@@ -2,6 +2,8 @@ package com.example.asasfans.bili;
 
 import org.junit.Test;
 
+import com.example.asasfans.data.AdvancedSearchDataBean;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -79,6 +81,41 @@ public class BiliVideoRepositoryTest {
         response.data.durl = Arrays.asList(durl);
 
         assertEquals("backup-mp4", repository.pickMp4Url(response));
+    }
+
+    @Test
+    public void lengthToSeconds_parsesMinuteAndHourFormats() {
+        assertEquals(65, BiliVideoRepository.lengthToSeconds("01:05"));
+        assertEquals(3723, BiliVideoRepository.lengthToSeconds("01:02:03"));
+        assertEquals(0, BiliVideoRepository.lengthToSeconds(""));
+    }
+
+    @Test
+    public void mapSpaceArchiveVideo_convertsToListVideoBean() {
+        BiliVideoRepository repository = new BiliVideoRepository(null, null, null);
+        BiliModels.SpaceArchiveVideo video = new BiliModels.SpaceArchiveVideo();
+        video.aid = 100;
+        video.bvid = "BV123";
+        video.author = "UP主";
+        video.mid = 200;
+        video.created = 1700000000L;
+        video.length = "02:03";
+        video.title = "标题";
+        video.description = "简介";
+        video.pic = "cover";
+        video.play = 300;
+        video.videoReview = 4;
+        video.comment = 5;
+
+        AdvancedSearchDataBean.DataBean.ResultBean result = repository.mapSpaceArchiveVideo(video);
+
+        assertEquals("BV123", result.getBvid());
+        assertEquals("UP主", result.getName());
+        assertEquals(200, result.getMid());
+        assertEquals("123", result.getDuration());
+        assertEquals(300, result.getView());
+        assertEquals(4, result.getDanmaku());
+        assertEquals(5, result.getReply());
     }
 
     private static BiliModels.DashMedia media(int id, String codecs, String url) {

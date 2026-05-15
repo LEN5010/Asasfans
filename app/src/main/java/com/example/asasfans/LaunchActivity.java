@@ -34,12 +34,12 @@ import okhttp3.Response;
  */
 
 public class LaunchActivity extends AppCompatActivity {
-    private String latestVersion = "https://api.github.com/repos/jiarandiana0307/as-as-fans/releases/latest";
+    private String latestVersion = "https://api.github.com/repos/LEN5010/as-as-fans/releases/latest";
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        DBOpenHelper dbOpenHelper = new DBOpenHelper(this,"blackList.db",null,1);
+        DBOpenHelper dbOpenHelper = new DBOpenHelper(this,"blackList.db",null, DBOpenHelper.DB_VERSION);
         dbOpenHelper.close();
         setContentView(R.layout.activity_lanch);
         new Thread(networkTask).start();

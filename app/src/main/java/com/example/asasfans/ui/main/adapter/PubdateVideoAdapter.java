@@ -28,6 +28,7 @@ import com.example.asasfans.R;
 import com.example.asasfans.data.AdvancedSearchDataBean;
 import com.example.asasfans.data.DBOpenHelper;
 import com.example.asasfans.data.VideoDataStoragedInMemory;
+import com.example.asasfans.data.VideoPlaybackModeStore;
 import com.example.asasfans.ui.bili.BiliVideoDetailActivity;
 import com.google.android.flexbox.FlexboxLayout;
 import coil.Coil;
@@ -125,6 +126,14 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
         mContext.startActivity(intent);
     }
 
+    private void openVideo(int position) {
+        if (VideoPlaybackModeStore.isExternalMode(mContext)) {
+            openExternalVideo(position);
+        } else {
+            openVideoDetail(position);
+        }
+    }
+
     private void openExternalVideo(int position) {
         if (!isValidPosition(position)) {
             return;
@@ -159,7 +168,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
             ContentValues values = new ContentValues();
             values.put("mid", video.getMid());
             values.put("name", video.getName());
-            values.put("face", "");
+            values.put("face", video.getFace() == null ? "" : video.getFace());
             values.put("note", "");
             values.put("updatedAt", System.currentTimeMillis() / 1000);
             sqliteDatabase.insertWithOnConflict("subscribedUp", null, values, SQLiteDatabase.CONFLICT_REPLACE);
@@ -325,7 +334,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openVideoDetail(videoViewHolder.getBindingAdapterPosition());
+                openVideo(videoViewHolder.getBindingAdapterPosition());
             }
         });
         view.setOnLongClickListener(new View.OnLongClickListener() {

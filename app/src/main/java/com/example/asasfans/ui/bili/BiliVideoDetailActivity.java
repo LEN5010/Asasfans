@@ -1,6 +1,9 @@
 package com.example.asasfans.ui.bili;
 
 import android.content.Intent;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -35,6 +38,8 @@ import com.example.asasfans.bili.BiliException;
 import com.example.asasfans.bili.BiliModels;
 import com.example.asasfans.bili.BiliVideoRepository;
 import com.example.asasfans.bili.WbiSigner;
+import com.example.asasfans.data.DBOpenHelper;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import java.util.ArrayList;
@@ -56,6 +61,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     private TextView ownerView;
     private TextView descView;
     private TextView commentStatus;
+    private MaterialButton subscribeButton;
     private Spinner pageSpinner;
     private Spinner qualitySpinner;
     private Spinner commentSortSpinner;
@@ -77,6 +83,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     private long currentCid;
     private int selectedQn;
     private boolean bindingQualitySpinner;
+    private BiliModels.Owner currentOwner;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -109,6 +116,8 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.bili_detail_toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
         findViewById(R.id.bili_open_external).setOnClickListener(v -> openInBilibili());
+        subscribeButton = findViewById(R.id.bili_subscribe_up);
+        subscribeButton.setOnClickListener(v -> toggleOwnerSubscription());
 
         titleView = findViewById(R.id.bili_detail_title);
         ownerView = findViewById(R.id.bili_detail_owner);
@@ -201,6 +210,8 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
         aid = data.aid;
         titleView.setText(data.title == null ? "" : data.title);
         ownerView.setText(data.owner == null ? "" : data.owner.name);
+        currentOwner = data.owner;
+        bindSubscribeButton();
         descView.setText(data.desc == null ? "" : data.desc);
         pages = data.pages == null ? new ArrayList<>() : data.pages;
         selectedPageIndex = 0;
@@ -416,6 +427,73 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
             } catch (Exception ignored) {
                 Toast.makeText(this, R.string.bili_open_failed, Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    private void bindSubscribeButton() {
+        if (currentOwner == null || currentOwner.mid <= 0) {
+            subscribeButton.setVisibility(View.GONE);
+            return;
+        }
+        subscribeButton.setVisibility(View.VISIBLE);
+        subscribeButton.setText(isOwnerSubscribed(currentOwner.mid) ? R.string.unsubscribe_this_up : R.string.subscribe_this_up);
+    }
+
+    private void toggleOwnerSubscription() {
+        if (currentOwner == null || currentOwner.mid <= 0) {
+            return;
+        }
+        if (isOwnerSubscribed(currentOwner.mid)) {
+            unsubscribeOwner(currentOwner.mid);
+            Toast.makeText(this, R.string.unsubscribe_this_up, Toast.LENGTH_SHORT).show();
+        } else {
+            subscribeOwner(currentOwner);
+            Toast.makeText(this, R.string.subscribe_this_up, Toast.LENGTH_SHORT).show();
+        }
+        bindSubscribeButton();
+    }
+
+    private boolean isOwnerSubscribed(long mid) {
+        DBOpenHelper dbOpenHelper = new DBOpenHelper(this, "blackList.db", null, DBOpenHelper.DB_VERSION);
+        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.query("subscribedUp", null, "mid=?", new String[]{String.valueOf(mid)}, null, null, null);
+            return cursor.moveToFirst();
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
+            dbOpenHelper.close();
+        }
+    }
+
+    private void subscribeOwner(BiliModels.Owner owner) {
+        DBOpenHelper dbOpenHelper = new DBOpenHelper(this, "blackList.db", null, DBOpenHelper.DB_VERSION);
+        SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put("mid", owner.mid);
+            values.put("name", owner.name == null ? "" : owner.name);
+            values.put("face", owner.face == null ? "" : owner.face);
+            values.put("note", "");
+            values.put("updatedAt", System.currentTimeMillis() / 1000);
+            db.insertWithOnConflict("subscribedUp", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        } finally {
+            db.close();
+            dbOpenHelper.close();
+        }
+    }
+
+    private void unsubscribeOwner(long mid) {
+        DBOpenHelper dbOpenHelper = new DBOpenHelper(this, "blackList.db", null, DBOpenHelper.DB_VERSION);
+        SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+        try {
+            db.delete("subscribedUp", "mid=?", new String[]{String.valueOf(mid)});
+        } finally {
+            db.close();
+            dbOpenHelper.close();
         }
     }
 
