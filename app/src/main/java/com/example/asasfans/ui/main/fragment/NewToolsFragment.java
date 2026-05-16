@@ -168,7 +168,6 @@ public class NewToolsFragment extends Fragment {
                         refresh.clearAnimation();
                     }
                 },800);
-                updateFragment(currentIndex);
             }
         });
 

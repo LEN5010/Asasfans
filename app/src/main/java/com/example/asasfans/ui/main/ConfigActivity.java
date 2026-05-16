@@ -52,6 +52,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class ConfigActivity extends AppCompatActivity implements View.OnClickListener{
+    private static final String LATEST_RELEASE_PAGE = "https://github.com/LEN5010/Asasfans-Next/releases/latest";
     private ConstraintLayout config_check_version;
     private ImageView config_check_version_icon;
     private ConstraintLayout config_contract_us;
@@ -111,10 +112,14 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
                         aCache.put("isNoLongerShowFloatingBall", "no");
                         Toast.makeText(ConfigActivity.this, "需要手动开启悬浮窗权限才能使用悬浮球，回到主页可再次开启", Toast.LENGTH_SHORT).show();
                     }
-                    floatHelper.show();
+                    if (floatHelper != null) {
+                        floatHelper.show();
+                    }
                 }else {
                     aCache.put("isShowFloatingBall", "no");
-                    floatHelper.dismiss();
+                    if (floatHelper != null) {
+                        floatHelper.dismiss();
+                    }
                 }
             }
         });
@@ -125,7 +130,9 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
     @Override
     protected void onResume() {
         super.onResume();
-        floatHelper.dismiss();
+        if (floatHelper != null) {
+            floatHelper.dismiss();
+        }
     }
 
     @Override
@@ -134,10 +141,14 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
         ACache aCache = ACache.get(this);
         String tmpACache =  aCache.getAsString("isShowFloatingBall"); // yes or no
         if (tmpACache == null){
-            floatHelper.show();
+            if (floatHelper != null) {
+                floatHelper.show();
+            }
 //            Toast.makeText(TestActivity.this, "悬浮球默认打开哦，可以在设置关闭", Toast.LENGTH_SHORT).show();
         }else if (tmpACache.equals("yes")){
-            floatHelper.show();
+            if (floatHelper != null) {
+                floatHelper.show();
+            }
         }else if (tmpACache.equals("no")){
 
         }
@@ -196,56 +207,14 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             Bundle data = msg.getData();
-            String val = data.getString("latestVersion");
+            String val = data.getString("latestVersion", "");
             Log.i("latestVersion", "请求结果为-->" + val);
-            Gson gson = new Gson();
             if (msg.what == GET_DATA_SUCCESS){
-                if (val.startsWith("{\"url\"")) {
-                    GithubVersionBean githubVersionBean = gson.fromJson(val, GithubVersionBean.class);
-                    String versionName = githubVersionBean.getTag_name();
-
-                    String[] tmp3 = versionName.split("v");
-                    String[] versionCodeString = tmp3[1].split("\\.");
-                    int versionCode = Integer.valueOf(versionCodeString[0]) * 100 + Integer.valueOf(versionCodeString[1]) * 10 + Integer.valueOf(versionCodeString[2]) * 1;
-                    if (versionCode > getVersionCode(ConfigActivity.this)) {
-                        DialogPlus dialog = DialogPlus.newDialog(ConfigActivity.this)
-                                .setContentHolder(new ViewHolder(R.layout.dialog_upgrade))
-                                .setContentHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-                                .setContentWidth(ViewGroup.LayoutParams.MATCH_PARENT)
-                                .setCancelable(true)
-                                .setContentBackgroundResource(R.color.transparent)
-                                .setGravity(Gravity.CENTER)
-                                .create();
-                        View dialogView = dialog.getHolderView();
-                        TextView title = dialogView.findViewById(R.id.title);
-                        TextView content = dialogView.findViewById(R.id.upgrade_content);
-                        TextView cancel = dialogView.findViewById(R.id.close);
-                        TextView confirm = dialogView.findViewById(R.id.upgrade);
-
-                        content.setText(githubVersionBean.getBody());
-
-                        confirm.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://fan.asoul.us.kg"));
-                                startActivity(intent);
-                                dialog.dismiss();
-                            }
-                        });
-                        cancel.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                dialog.dismiss();
-                            }
-                        });
-                        dialog.show();
-                    } else {
-                        Toast.makeText(ConfigActivity.this, "已是最新版本", Toast.LENGTH_SHORT).show();
-                    }
+                if (val != null && val.startsWith("{\"url\"")) {
+                    handleLatestReleaseJson(val);
                 }else {
                     Toast.makeText(ConfigActivity.this, "403，请手动对比当前与最新版本号", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://fan.asoul.us.kg"));
-                    startActivity(intent);
+                    openReleaseUrl(null);
                 }
             }else {
                 Toast.makeText(ConfigActivity.this, "网络错误，版本号获取失败", Toast.LENGTH_SHORT).show();
@@ -265,21 +234,81 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
             Request request = new Request.Builder().url(latestVersion)
                     .get().build();
             Call call = client.newCall(request);
-            Response response = null;
-            String tmp;
-            try {
-                response = call.execute();
-                tmp = response.body().string();
+            try (Response response = call.execute()) {
                 msg.what = GET_DATA_SUCCESS;
-                data.putString("latestVersion", tmp);
+                data.putString("latestVersion", response.body() == null ? "" : response.body().string());
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
+                msg.what = NETWORK_ERROR;
                 data.putString("latestVersion", "");
-                handler.sendEmptyMessage(NETWORK_ERROR);
             }
             msg.setData(data);
             handler.sendMessage(msg);
         }
     };
+
+    private void handleLatestReleaseJson(String val) {
+        try {
+            GithubVersionBean githubVersionBean = new Gson().fromJson(val, GithubVersionBean.class);
+            int versionCode = parseReleaseVersionCode(githubVersionBean == null ? null : githubVersionBean.getTag_name());
+            if (versionCode > getVersionCode(ConfigActivity.this)) {
+                showUpgradeDialog(githubVersionBean);
+            } else {
+                Toast.makeText(ConfigActivity.this, "已是最新版本", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.w("latestVersion", "Failed to parse latest release", e);
+            Toast.makeText(ConfigActivity.this, "版本信息解析失败，请手动查看发布页", Toast.LENGTH_SHORT).show();
+            openReleaseUrl(null);
+        }
+    }
+
+    private void showUpgradeDialog(GithubVersionBean githubVersionBean) {
+        DialogPlus dialog = DialogPlus.newDialog(ConfigActivity.this)
+                .setContentHolder(new ViewHolder(R.layout.dialog_upgrade))
+                .setContentHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+                .setContentWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+                .setCancelable(true)
+                .setContentBackgroundResource(R.color.transparent)
+                .setGravity(Gravity.CENTER)
+                .create();
+        View dialogView = dialog.getHolderView();
+        TextView content = dialogView.findViewById(R.id.upgrade_content);
+        TextView cancel = dialogView.findViewById(R.id.close);
+        TextView confirm = dialogView.findViewById(R.id.upgrade);
+
+        content.setText(githubVersionBean.getBody());
+
+        confirm.setOnClickListener(view -> {
+            openReleaseUrl(githubVersionBean.getHtml_url());
+            dialog.dismiss();
+        });
+        cancel.setOnClickListener(view -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private int parseReleaseVersionCode(@Nullable String tagName) {
+        if (tagName == null) {
+            return -1;
+        }
+        String normalized = tagName.startsWith("v") ? tagName.substring(1) : tagName;
+        String[] versionCodeString = normalized.split("\\.");
+        if (versionCodeString.length < 3) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(versionCodeString[0]) * 100
+                    + Integer.parseInt(versionCodeString[1]) * 10
+                    + Integer.parseInt(versionCodeString[2]);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private void openReleaseUrl(@Nullable String releaseUrl) {
+        String targetUrl = (releaseUrl == null || releaseUrl.isEmpty()) ? LATEST_RELEASE_PAGE : releaseUrl;
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
+        startActivity(intent);
+    }
 }

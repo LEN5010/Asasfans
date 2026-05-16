@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.asasfans.data.DBOpenHelper;
 import com.example.asasfans.util.ACache;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -69,6 +68,8 @@ public class LaunchActivity extends AppCompatActivity {
         public void run() {
             Message msg = new Message();
             Bundle data = new Bundle();
+            msg.what = GET_DATA_SUCCESS;
+            data.putString("latestVersion", "");
             ACache aCache = ACache.get(LaunchActivity.this);
             String tmpACache =  aCache.getAsString("latestVersion");
             if (tmpACache == null) {
@@ -78,18 +79,15 @@ public class LaunchActivity extends AppCompatActivity {
                 Request request = new Request.Builder().url(latestVersion)
                         .get().build();
                 Call call = client.newCall(request);
-                Response response = null;
-                String tmp;
-                try {
-                    response = call.execute();
-                    tmp = response.body().string();
-                    msg.what = GET_DATA_SUCCESS;
-                    data.putString("latestVersion", tmp);
-                    aCache.put("latestVersion", tmp, ACache.TIME_DAY);
-                } catch (IOException e) {
+                try (Response response = call.execute()) {
+                    if (response.body() != null) {
+                        String tmp = response.body().string();
+                        data.putString("latestVersion", tmp);
+                        aCache.put("latestVersion", tmp, ACache.TIME_DAY);
+                    }
+                } catch (Exception e) {
                     e.printStackTrace();
-                    data.putString("latestVersion", "");
-                    handler.sendEmptyMessage(NETWORK_ERROR);
+                    msg.what = NETWORK_ERROR;
                 }
             }else {
                 msg.what = GET_DATA_SUCCESS;

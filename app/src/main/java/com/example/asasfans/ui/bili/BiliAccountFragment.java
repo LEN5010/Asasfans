@@ -22,6 +22,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import com.example.asasfans.R;
 import com.example.asasfans.bili.BiliApiClient;
@@ -170,7 +171,7 @@ public class BiliAccountFragment extends Fragment {
         mainHandler.removeCallbacks(pollRunnable);
         qrPanel.setVisibility(View.GONE);
         passwordPanel.setVisibility(View.VISIBLE);
-        if (webView.getUrl() == null) {
+        if (webView != null && webView.getUrl() == null) {
             webView.loadUrl(PASSWORD_LOGIN_URL);
         }
     }
@@ -180,9 +181,9 @@ public class BiliAccountFragment extends Fragment {
             try {
                 BiliModels.NavResponse nav = authRepository.getNav();
                 if (nav != null && nav.data != null && nav.data.isLogin) {
-                    requireActivity().runOnUiThread(() -> showLoggedIn(nav.data));
+                    runOnUiIfAlive(() -> showLoggedIn(nav.data));
                 } else {
-                    requireActivity().runOnUiThread(() -> {
+                    runOnUiIfAlive(() -> {
                         setLoggedOut();
                         if (generateQrWhenLoggedOut) {
                             generateQrCode();
@@ -190,7 +191,7 @@ public class BiliAccountFragment extends Fragment {
                     });
                 }
             } catch (Exception e) {
-                requireActivity().runOnUiThread(() -> {
+                runOnUiIfAlive(() -> {
                     setLoggedOut();
                     if (generateQrWhenLoggedOut) {
                         generateQrCode();
@@ -229,13 +230,13 @@ public class BiliAccountFragment extends Fragment {
                 BiliModels.QrGenerateResponse response = authRepository.generateQrCode();
                 Bitmap bitmap = createQrBitmap(response.data.url);
                 currentQrKey = response.data.qrcodeKey;
-                requireActivity().runOnUiThread(() -> {
+                runOnUiIfAlive(() -> {
                     qrImage.setImageBitmap(bitmap);
                     loginStatus.setText(R.string.bili_qr_wait_scan);
                     schedulePoll();
                 });
             } catch (Exception e) {
-                requireActivity().runOnUiThread(() -> loginStatus.setText(getString(R.string.bili_login_failed) + ": " + e.getMessage()));
+                runOnUiIfAlive(() -> loginStatus.setText(getString(R.string.bili_login_failed) + ": " + e.getMessage()));
             }
         });
     }
@@ -248,18 +249,18 @@ public class BiliAccountFragment extends Fragment {
             try {
                 BiliModels.QrPollResponse response = authRepository.pollQrCode(currentQrKey);
                 if (response == null || response.data == null) {
-                    requireActivity().runOnUiThread(() -> loginStatus.setText(R.string.bili_login_failed));
+                    runOnUiIfAlive(() -> loginStatus.setText(R.string.bili_login_failed));
                     return;
                 }
                 handlePollCode(response.data.code, response.data.message);
             } catch (Exception e) {
-                requireActivity().runOnUiThread(() -> loginStatus.setText(getString(R.string.bili_login_failed) + ": " + e.getMessage()));
+                runOnUiIfAlive(() -> loginStatus.setText(getString(R.string.bili_login_failed) + ": " + e.getMessage()));
             }
         });
     }
 
     private void handlePollCode(int code, String message) {
-        requireActivity().runOnUiThread(() -> {
+        runOnUiIfAlive(() -> {
             if (destroyed) {
                 return;
             }
@@ -283,6 +284,9 @@ public class BiliAccountFragment extends Fragment {
     }
 
     private void syncWebCookiesAndCheck() {
+        if (destroyed) {
+            return;
+        }
         String passportCookie = CookieManager.getInstance().getCookie("https://passport.bilibili.com");
         String biliCookie = CookieManager.getInstance().getCookie("https://www.bilibili.com");
         credentialStore.saveFromCookieString(passportCookie);
@@ -311,10 +315,33 @@ public class BiliAccountFragment extends Fragment {
         return bitmap;
     }
 
+    private void runOnUiIfAlive(Runnable runnable) {
+        if (destroyed || !isAdded()) {
+            return;
+        }
+        FragmentActivity activity = getActivity();
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+            return;
+        }
+        activity.runOnUiThread(() -> {
+            if (!destroyed && isAdded()) {
+                runnable.run();
+            }
+        });
+    }
+
     @Override
     public void onDestroyView() {
         destroyed = true;
         mainHandler.removeCallbacks(pollRunnable);
+        if (webView != null) {
+            webView.stopLoading();
+            webView.setWebChromeClient(null);
+            webView.setWebViewClient(null);
+            webView.loadUrl("about:blank");
+            webView.destroy();
+            webView = null;
+        }
         super.onDestroyView();
     }
 

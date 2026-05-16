@@ -82,6 +82,7 @@ public class TestActivity extends AppCompatActivity {
     private long lastBackPressed;
     /** 两次点击的间隔时间 */
     private static final int QUIT_INTERVAL = 3000;
+    private static final String LATEST_RELEASE_URL = "https://github.com/LEN5010/Asasfans-Next/releases/latest";
 
     private TabLayout tabs;
     public static ViewPager2 viewPager;
@@ -136,19 +137,21 @@ public class TestActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        floatHelper.dismiss();
+        acquireRuntimeLocks();
+        dismissFloatingBall();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        releaseRuntimeLocks();
         ACache aCache = ACache.get(this);
         String tmpACache =  aCache.getAsString("isShowFloatingBall"); // yes or no
         if (tmpACache == null){
-            floatHelper.show();
+            showFloatingBall();
 //            Toast.makeText(TestActivity.this, "悬浮球默认打开哦，可以在设置关闭", Toast.LENGTH_SHORT).show();
         }else if (tmpACache.equals("yes")){
-            floatHelper.show();
+            showFloatingBall();
         }else if (tmpACache.equals("no")){
 
         }
@@ -164,10 +167,9 @@ public class TestActivity extends AppCompatActivity {
 
         pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "POWER_MANAGER_TAG");
-        wl.acquire();
         wifiManager = (WifiManager) contextTestActivity.getSystemService(Context.WIFI_SERVICE);
         wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "WifiLocKManager");
-        wifiLock.acquire();
+        acquireRuntimeLocks();
         initFloatingBall(TestActivity.this);
 
 //        setContentView(R.layout.activity_bottom_main);
@@ -211,50 +213,72 @@ public class TestActivity extends AppCompatActivity {
 //                R.drawable.divider)); //设置分割线的样式
 //        linearLayout.setDividerPadding(20); //设置分割线间隔
 
-        Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
-        Gson gson = new Gson();
-        if (bundle == null){
-
-        } else if (bundle.getString("latestVersion").equals("")){
-            Toast.makeText(TestActivity.this, "网络错误，版本号获取失败", Toast.LENGTH_SHORT).show();
-        }else {
-            if (bundle.getString("latestVersion").startsWith("{\"url\"")){
-                GithubVersionBean githubVersionBean = gson.fromJson(bundle.getString("latestVersion"), GithubVersionBean.class);
-                String versionName = githubVersionBean.getTag_name();
-
-                String[] tmp3 = versionName.split("v");
-                String[] versionCodeString = tmp3[1].split("\\.");
-                int versionCode = Integer.valueOf(versionCodeString[0]) * 100 + Integer.valueOf(versionCodeString[1]) * 10 + Integer.valueOf(versionCodeString[2]) * 1;
-                if (versionCode > getVersionCode(TestActivity.this)) {
-                    initDialog(TestActivity.this);
-                    TextView title = dialogView.findViewById(R.id.title);
-                    TextView content = dialogView.findViewById(R.id.upgrade_content);
-                    TextView cancel = dialogView.findViewById(R.id.close);
-                    TextView confirm = dialogView.findViewById(R.id.upgrade);
-
-                    content.setText(githubVersionBean.getBody());
-
-                    confirm.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://fan.asoul.us.kg"));
-                            startActivity(intent);
-                            dialog.dismiss();
-                        }
-                    });
-                    cancel.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            dialog.dismiss();
-                        }
-                    });
-                    dialog.show();
-                }
-            }
-        }
+        handleLaunchVersionInfo(getIntent().getExtras());
         selectPage(0);
 
+    }
+
+    private void handleLaunchVersionInfo(@Nullable Bundle bundle) {
+        if (bundle == null) {
+            return;
+        }
+        String latestVersionJson = bundle.getString("latestVersion", "");
+        if (latestVersionJson == null || latestVersionJson.isEmpty()) {
+            Toast.makeText(TestActivity.this, "网络错误，版本号获取失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!latestVersionJson.startsWith("{\"url\"")) {
+            return;
+        }
+        try {
+            GithubVersionBean githubVersionBean = new Gson().fromJson(latestVersionJson, GithubVersionBean.class);
+            int versionCode = parseReleaseVersionCode(githubVersionBean == null ? null : githubVersionBean.getTag_name());
+            if (versionCode > getVersionCode(TestActivity.this)) {
+                showUpgradeDialog(githubVersionBean);
+            }
+        } catch (Exception e) {
+            Log.w("TestActivity", "Failed to parse latest release", e);
+        }
+    }
+
+    private void showUpgradeDialog(GithubVersionBean githubVersionBean) {
+        initDialog(TestActivity.this);
+        TextView content = dialogView.findViewById(R.id.upgrade_content);
+        TextView cancel = dialogView.findViewById(R.id.close);
+        TextView confirm = dialogView.findViewById(R.id.upgrade);
+
+        content.setText(githubVersionBean.getBody());
+
+        confirm.setOnClickListener(view -> {
+            openReleaseUrl(githubVersionBean.getHtml_url());
+            dialog.dismiss();
+        });
+        cancel.setOnClickListener(view -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private int parseReleaseVersionCode(@Nullable String tagName) {
+        if (tagName == null) {
+            return -1;
+        }
+        String normalized = tagName.startsWith("v") ? tagName.substring(1) : tagName;
+        String[] versionCodeString = normalized.split("\\.");
+        if (versionCodeString.length < 3) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(versionCodeString[0]) * 100
+                    + Integer.parseInt(versionCodeString[1]) * 10
+                    + Integer.parseInt(versionCodeString[2]);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private void openReleaseUrl(@Nullable String releaseUrl) {
+        String targetUrl = (releaseUrl == null || releaseUrl.isEmpty()) ? LATEST_RELEASE_URL : releaseUrl;
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
+        startActivity(intent);
     }
 
 //    public static void init(Context aContext) {
@@ -514,10 +538,10 @@ public class TestActivity extends AppCompatActivity {
         ACache aCache = ACache.get(this);
         String tmpACache =  aCache.getAsString("isShowFloatingBall"); // yes or no
         if (tmpACache == null){
-            floatHelper.show();
+            showFloatingBall();
 //            Toast.makeText(TestActivity.this, "悬浮球默认打开哦，可以在设置关闭", Toast.LENGTH_SHORT).show();
         }else if (tmpACache.equals("yes")){
-            floatHelper.show();
+            showFloatingBall();
         }else if (tmpACache.equals("no")){
 
         }
@@ -566,7 +590,10 @@ public class TestActivity extends AppCompatActivity {
             ((WebFragment)mCurrentFragment).onKeyDown(keyCode, event);
             return true;
         }else if(mCurrentFragment instanceof NewToolsFragment){
-            ((NewToolsFragment) mCurrentFragment).current().onKeyDown(keyCode, event);
+            WebFragment currentWebFragment = ((NewToolsFragment) mCurrentFragment).current();
+            if (currentWebFragment != null) {
+                currentWebFragment.onKeyDown(keyCode, event);
+            }
             return true;
         }
         else if (keyCode==KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
@@ -638,7 +665,7 @@ public class TestActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode){
             case REQUEST_DIALOG_PERMISSION:
-                floatHelper.show();
+                showFloatingBall();
                 ACache aCache = ACache.get(this);
                 aCache.put("isShowFloatingBall", "yes");
                 aCache.put("isNoLongerShowFloatingBall", "no");
@@ -651,12 +678,56 @@ public class TestActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        floatHelper.release();
-        wl.release();
-        wifiLock.release();
+        releaseFloatingBall();
+        releaseRuntimeLocks();
         Log.i("TestActivity", "onDestroy: ");
     }
     //实现暂停音乐
+
+    private void acquireRuntimeLocks() {
+        try {
+            if (wl != null && !wl.isHeld()) {
+                wl.acquire();
+            }
+            if (wifiLock != null && !wifiLock.isHeld()) {
+                wifiLock.acquire();
+            }
+        } catch (Exception e) {
+            Log.w("TestActivity", "Failed to acquire runtime locks", e);
+        }
+    }
+
+    private void releaseRuntimeLocks() {
+        try {
+            if (wl != null && wl.isHeld()) {
+                wl.release();
+            }
+            if (wifiLock != null && wifiLock.isHeld()) {
+                wifiLock.release();
+            }
+        } catch (Exception e) {
+            Log.w("TestActivity", "Failed to release runtime locks", e);
+        }
+    }
+
+    private static void showFloatingBall() {
+        if (floatHelper != null) {
+            floatHelper.show();
+        }
+    }
+
+    private static void dismissFloatingBall() {
+        if (floatHelper != null) {
+            floatHelper.dismiss();
+        }
+    }
+
+    private static void releaseFloatingBall() {
+        if (floatHelper != null) {
+            floatHelper.release();
+            floatHelper = null;
+        }
+    }
 
 
 

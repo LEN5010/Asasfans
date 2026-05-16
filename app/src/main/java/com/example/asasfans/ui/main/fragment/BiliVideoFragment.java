@@ -155,7 +155,7 @@ public class BiliVideoFragment extends Fragment {
             resultBeans.clear();
             pubdateVideoAdapter.notifyDataSetChanged();
             try {
-                cachedThreadPool.execute(networkTask.setParam(apiConfig.getUrl()));
+                executeNetworkRequest(apiConfig.getUrl());
             } catch (Exception e) {
                 e.printStackTrace();
                 Toast.makeText(getActivity(), "刷新失败，再试一次", Toast.LENGTH_SHORT).show();
@@ -174,7 +174,7 @@ public class BiliVideoFragment extends Fragment {
                         isLoadingMore = true;
                         apiConfig.pageSelfAdd();
                         try {
-                            cachedThreadPool.execute(networkTask.setParam(apiConfig.getUrl()));
+                            executeNetworkRequest(apiConfig.getUrl());
                         } catch (Exception e) {
                             e.printStackTrace();
                             apiConfig.pageSelfDecrement();
@@ -187,7 +187,7 @@ public class BiliVideoFragment extends Fragment {
         });
         if (firstOnCreateView) {
             refreshLayout.setRefreshing(true);
-            cachedThreadPool.execute(networkTask.setParam(apiConfig.getUrl()));
+            executeNetworkRequest(apiConfig.getUrl());
             firstOnCreateView = false;
         }
         return view;
@@ -196,6 +196,9 @@ public class BiliVideoFragment extends Fragment {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            if (!isAdded() || refreshLayout == null || pubdateVideoAdapter == null) {
+                return;
+            }
             Bundle data = msg.getData();
             String val = data.getString("AdvancedSearchDataBean");
             Log.i("BiliVideoFragment:AdvancedSearchDataBean", "请求结果为-->" + val);
@@ -203,7 +206,7 @@ public class BiliVideoFragment extends Fragment {
             switch (msg.what){
                 case GET_DATA_SUCCESS:
                     refreshLayout.setRefreshing(false);
-                    if (val.startsWith("{\"code\":0,\"message\":\"ok\"")) {
+                    if (val != null && val.startsWith("{\"code\":0,\"message\":\"ok\"")) {
                         AdvancedSearchDataBean advancedSearchDataBean = gson.fromJson(val, AdvancedSearchDataBean.class);
                         List<AdvancedSearchDataBean.DataBean.ResultBean> allResultBeans = advancedSearchDataBean.getData().getResult();
 
@@ -287,50 +290,48 @@ public class BiliVideoFragment extends Fragment {
     };
 
 
-    private ImageFanArtFragment.MyRunnable networkTask = new ImageFanArtFragment.MyRunnable() {
-        String url;
-        @Override
-        public ImageFanArtFragment.MyRunnable setParam(String param) {
-            url = param;
-            return this;
-        }
+    private void executeNetworkRequest(String url) {
+        cachedThreadPool.execute(createNetworkTask(url));
+    }
 
-        @Override
-        public void run() {
-            Message msg = new Message();
-            Bundle data = new Bundle();
-            // TODO
-            // 在这里进行 http request.网络请求相关操作
+    private Runnable createNetworkTask(String requestUrl) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                Message msg = new Message();
+                Bundle data = new Bundle();
+                // TODO
+                // 在这里进行 http request.网络请求相关操作
 //            page++;
 //            ACache aCache = ACache.get(getActivity());
 //            String tmpACache = aCache.getAsString(url);
 //            if (tmpACache == null) {
-            OkHttpClient client = new OkHttpClient.Builder().readTimeout(15, TimeUnit.SECONDS).build();
-            Request request = new Request.Builder().url(url)
-                    .get().build();
-            Call call = client.newCall(request);
-            Response response = null;
-            String tmp;
-            try {
-                response = call.execute();
-                tmp = response.body().string();
-                msg.what = GET_DATA_SUCCESS;
-                data.putString("AdvancedSearchDataBean", tmp);
+                OkHttpClient client = new OkHttpClient.Builder().readTimeout(15, TimeUnit.SECONDS).build();
+                Request request = new Request.Builder().url(requestUrl)
+                        .get().build();
+                Call call = client.newCall(request);
+                try (Response response = call.execute()) {
+                    if (response.body() == null) {
+                        throw new IOException("Empty response body");
+                    }
+                    msg.what = GET_DATA_SUCCESS;
+                    data.putString("AdvancedSearchDataBean", response.body().string());
 //                    aCache.put(url, tmp, ACache.TIME_HOUR);
-            } catch (IOException e) {
-                e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
 //                page--;
-                handler.sendEmptyMessage(NETWORK_ERROR);
-            }
+                    msg.what = NETWORK_ERROR;
+                }
 //            }else {
 //                msg.what = GET_DATA_SUCCESS;
 //                data.putString("AdvancedSearchDataBean", aCache.getAsString(url));
 //                Log.i("ACache:AdvancedSearchDataBean", aCache.getAsString(url));
 //            }
-            msg.setData(data);
-            handler.sendMessage(msg);
-        }
-    };
+                msg.setData(data);
+                handler.sendMessage(msg);
+            }
+        };
+    }
     public static boolean searchInSQL(SQLiteDatabase db, String str, String table, String col) {
 
         Cursor cursor = db.rawQuery(
