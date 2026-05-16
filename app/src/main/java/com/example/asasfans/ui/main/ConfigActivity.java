@@ -2,8 +2,6 @@ package com.example.asasfans.ui.main;
 
 import static com.example.asasfans.TestActivity.floatHelper;
 import static com.example.asasfans.TestActivity.getVersionCode;
-import static com.example.asasfans.ui.main.adapter.PubdateVideoAdapter.GET_DATA_SUCCESS;
-import static com.example.asasfans.ui.main.adapter.PubdateVideoAdapter.NETWORK_ERROR;
 
 import android.content.Context;
 import android.content.Intent;
@@ -52,6 +50,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class ConfigActivity extends AppCompatActivity implements View.OnClickListener{
+    private static final int GET_DATA_SUCCESS = 1;
+    private static final int NETWORK_ERROR = 2;
     private static final String LATEST_RELEASE_PAGE = "https://github.com/LEN5010/Asasfans-Next/releases/latest";
     private ConstraintLayout config_check_version;
     private ImageView config_check_version_icon;

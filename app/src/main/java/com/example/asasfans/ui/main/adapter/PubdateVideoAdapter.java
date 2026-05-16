@@ -27,7 +27,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.asasfans.R;
 import com.example.asasfans.data.AdvancedSearchDataBean;
 import com.example.asasfans.data.DBOpenHelper;
-import com.example.asasfans.data.VideoDataStoragedInMemory;
 import com.example.asasfans.data.VideoPlaybackModeStore;
 import com.example.asasfans.ui.bili.BiliVideoDetailActivity;
 import com.google.android.flexbox.FlexboxLayout;
@@ -41,23 +40,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author akarinini
- * @description 命名错误，这个类实际是真正的VideoAdapter，根据传入的bvid list调用BVID_SEARCH_URL api异步更新各个video item
+ * @description 视频列表 Adapter。
  */
 
 public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
-    public static final int GET_DATA_SUCCESS = 1;
-    public static final int NETWORK_ERROR = 2;
-
-    private String BVID_SEARCH_URL = "https://api.bilibili.com/x/web-interface/view?bvid=";
     private Context mContext;
     private final String PackageName = "tv.danmaku.bili";
-    private final ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
-    private List<VideoDataStoragedInMemory> videoDataStoragedInMemoryList = new ArrayList<>();
     private List<AdvancedSearchDataBean.DataBean.ResultBean> resultBeans = new ArrayList<>();
     private DialogPlus dialog;
     private View dialogView;
@@ -65,13 +56,6 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
     DBOpenHelper dbOpenHelper;
     SQLiteDatabase db;
 
-    public PubdateVideoAdapter(Context context, List<VideoDataStoragedInMemory> videosBvid) {
-        this.mContext = context;
-        this.videoDataStoragedInMemoryList = videosBvid;
-        dbOpenHelper = new DBOpenHelper(context, "blackList.db", null, DBOpenHelper.DB_VERSION);
-        db = dbOpenHelper.getWritableDatabase();
-        initDialog();
-    }
     public PubdateVideoAdapter(Context context, List<AdvancedSearchDataBean.DataBean.ResultBean> resultBeans, int pageNums) {
         this.mContext = context;
         this.resultBeans = resultBeans;
@@ -225,14 +209,6 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                             DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                             SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                             ContentValues values = new ContentValues();
-//                            values.put("bvid", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getBvid());
-//                            values.put("PicUrl", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getPicUrl());
-//                            values.put("Title", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getTitle());
-//                            values.put("Duration", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getDuration());
-//                            values.put("Author", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getAuthor());
-//                            values.put("ViewNum", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getView());
-//                            values.put("LikeNum", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getLike());
-//                            values.put("Tname", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getTname());
                             values.put("bvid", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getBvid());
                             values.put("PicUrl", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getPic());
                             values.put("Title", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTitle());
@@ -378,14 +354,6 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                             DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                             SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                             ContentValues values = new ContentValues();
-//                            values.put("bvid", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getBvid());
-//                            values.put("PicUrl", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getPicUrl());
-//                            values.put("Title", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getTitle());
-//                            values.put("Duration", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getDuration());
-//                            values.put("Author", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getAuthor());
-//                            values.put("ViewNum", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getView());
-//                            values.put("LikeNum", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getLike());
-//                            values.put("Tname", videoDataStoragedInMemoryList.get(videoViewHolder.getBindingAdapterPosition()).getTname());
                             values.put("bvid", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getBvid());
                             values.put("PicUrl", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getPic());
                             values.put("Title", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTitle());
@@ -509,99 +477,6 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
         holder.videoLike.setText(viewNumFormat(resultBeans.get(position).getLike()));
         holder.videoView.setText(viewNumFormat(resultBeans.get(position).getView()));
         holder.videoTname.setText(resultBeans.get(position).getTname());
-        // 下面被成段注释掉的为传入bvid的item更新视频的机制，若
-        /*Handler handler = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                Bundle data = msg.getData();
-                String val = data.getString("singleVideoData");
-//                Log.i("singleVideoData", "请求结果为-->" + val);
-                Gson gson =new Gson();
-                SingleVideoBean singleVideoBean = gson.fromJson(val, SingleVideoBean.class);
-//                if (singleVideoBean.getCode() == 62002)
-                switch (msg.what){
-                    case GET_DATA_SUCCESS:
-                        if ((singleVideoBean.getData() != null)) {
-                            holder.videoTitle.setText(singleVideoBean.getData().getTitle());
-                            videoDataStoragedInMemoryList.get(position).setTitle(singleVideoBean.getData().getTitle());
-                            Coil.imageLoader(mContext).enqueue(new ImageRequest.Builder(mContext)
-                                    .data(singleVideoBean.getData().getPic() + "@480w_300h_1e_1c.jpg")
-                                    .target(holder.imageView)
-                                    .build());
-                            videoDataStoragedInMemoryList.get(position).setPicUrl(singleVideoBean.getData().getPic() + "@480w_300h_1e_1c.jpg");
-                            holder.videoAuthor.setText(singleVideoBean.getData().getOwner().getName());
-                            videoDataStoragedInMemoryList.get(position).setAuthor(singleVideoBean.getData().getOwner().getName());
-                            holder.videoDuration.setText(secondsToTime(singleVideoBean.getData().getDuration()));
-                            videoDataStoragedInMemoryList.get(position).setDuration(singleVideoBean.getData().getDuration());
-                            holder.videoLike.setText(viewNumFormat(singleVideoBean.getData().getStat().getLike()) + " 点赞");
-                            videoDataStoragedInMemoryList.get(position).setLike(singleVideoBean.getData().getStat().getLike());
-                            holder.videoView.setText(viewNumFormat(singleVideoBean.getData().getStat().getView()) + " 播放");
-                            videoDataStoragedInMemoryList.get(position).setView(singleVideoBean.getData().getStat().getView());
-                            holder.videoTname.setText("分区 "+singleVideoBean.getData().getTname());
-                            videoDataStoragedInMemoryList.get(position).setTname(singleVideoBean.getData().getTname());
-                            videoDataStoragedInMemoryList.get(position).setFirstLoad(false);
-                        }else {
-                            holder.videoTitle.setText(val);
-//                            videoDataStoragedInMemoryList.remove(position);
-//                            notifyItemRemoved(position);
-//                            notifyDataSetChanged();
-//                            BiliVideoFragment.pubdateVideoAdapter.notifyItemRemoved(position);
-//                            BiliVideoFragment.pubdateVideoAdapter.notifyItemRangeChanged(position, BiliVideoFragment.pubdateVideoAdapter.getItemCount());
-                        }
-                        break;
-                    case NETWORK_ERROR:
-                        holder.videoTitle.setText("NETWORK_ERROR");
-                }
-                // TODO
-                // UI界面的更新等相关操作
-            }
-        };
-
-        Runnable networkTask = new Runnable() {
-            @Override
-            public void run() {
-                Message msg = new Message();
-                Bundle data = new Bundle();
-                // TODO
-                // 在这里进行 http request.网络请求相关操作
-                OkHttpClient client = new OkHttpClient.Builder().readTimeout(5, TimeUnit.SECONDS).build();
-                Request request = new Request.Builder().url(BVID_SEARCH_URL + videoDataStoragedInMemoryList.get(position).getBvid())
-                        .get().build();
-                Call call = client.newCall(request);
-                Response response = null;
-                String tmp;
-                try {
-                    response = call.execute();
-                    tmp = response.body().string();
-                    msg.what = GET_DATA_SUCCESS;
-                    data.putString("singleVideoData", tmp);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    handler.sendEmptyMessage(NETWORK_ERROR);
-                }
-                msg.setData(data);
-                handler.sendMessage(msg);
-            }
-        };
-
-//        new Thread(networkTask).start();
-        if ((videoDataStoragedInMemoryList.get(position).getFirstLoad())) {
-            cachedThreadPool.execute(networkTask);
-        }else {
-            holder.videoTitle.setText(videoDataStoragedInMemoryList.get(position).getTitle());
-            Coil.imageLoader(mContext).enqueue(new ImageRequest.Builder(mContext)
-                    .data(videoDataStoragedInMemoryList.get(position).getPicUrl())
-                    .target(holder.imageView)
-                    .build());
-            holder.videoAuthor.setText(videoDataStoragedInMemoryList.get(position).getAuthor());
-            holder.videoDuration.setText(secondsToTime(videoDataStoragedInMemoryList.get(position).getDuration()));
-            holder.videoLike.setText(viewNumFormat(videoDataStoragedInMemoryList.get(position).getLike()) + " 点赞");
-            holder.videoView.setText(viewNumFormat(videoDataStoragedInMemoryList.get(position).getView()) + " 播放");
-            holder.videoTname.setText("分区 "+videoDataStoragedInMemoryList.get(position).getTname());
-//            Log.i("getFirstLoad:false", String.valueOf(position));
-        }*/
 
     }
 

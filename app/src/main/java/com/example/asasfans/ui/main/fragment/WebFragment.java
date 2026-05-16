@@ -4,7 +4,6 @@ import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
 import static android.content.Context.DOWNLOAD_SERVICE;
 
-import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -30,7 +29,6 @@ import android.webkit.URLUtil;
 import com.tencent.smtt.sdk.CookieManager;
 import com.tencent.smtt.sdk.ValueCallback;
 import com.tencent.smtt.sdk.WebChromeClient;
-import android.webkit.WebResourceError;
 
 import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
 import com.tencent.smtt.sdk.WebSettings;
@@ -45,21 +43,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.asasfans.R;
-import com.example.asasfans.ui.main.VideoProxyManager;
-import com.example.asasfans.util.SystemUtils;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 
 /**
@@ -82,9 +65,6 @@ public class WebFragment extends Fragment {
     private Boolean inBottom = true;
     private boolean calendarFallbackOpened = false;
 
-    private WebResourceResponse webResourceResponse = null;
-    private String proxyUrl;
-    private InputStream is;
     public static WebFragment newInstance(String url, Boolean inBottom) {
         WebFragment fragment = new WebFragment();
         Bundle args = new Bundle();
@@ -227,61 +207,6 @@ public class WebFragment extends Fragment {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, com.tencent.smtt.export.external.interfaces.WebResourceRequest request) {
                 Log.i("shouldInterceptRequest:getUrl", request.getUrl().toString());
-                /*
-                if (request.getUrl().toString().startsWith("https://asbbs-static-01.kzmidc.workers.dev/?file=/uploads/files/1/banner_1646556711136.mp4") ||
-                        request.getUrl().toString().startsWith("https://as-archive-cn-01.a-soul.fans/") ||
-                        request.getUrl().toString().startsWith("https://as-archive-load-balance.kzmidc.workers.dev") ||
-                        request.getUrl().toString().startsWith("https://cn.as-archive.studio.asf.ink/AZCN-Sharepoint")
-                        || request.getUrl().toString().startsWith("https://as-archive-azcn-0001.asf.ink/AZCN-Sharepoint")){
-                    webResourceResponse = null;
-                    proxyUrl = VideoProxyManager.getInstance().getProxyUrl(request.getUrl().toString());
-//                    String proxyUrl = ProxyCacheUtils.getProxyUrl(uri.toString(), null, null);
-                    Log.i("proxyUrl", proxyUrl);
-//                    SystemUtils.inputStreamByUrl(proxyUrl);
-                    is = null;
-                    if (proxyUrl.startsWith("file://")){
-                        try {
-                            is = SystemUtils.inputStreamByUrl(proxyUrl.replaceFirst("file://",""));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                            webResourceResponse = null;
-                        }
-                        webResourceResponse = new WebResourceResponse("video/avc", "utf-8", is);
-                    }else {
-
-                        String[] tmp = proxyUrl.split("/");
-//                            is = SystemUtils.inputStreamByUrl(proxyUrl);
-
-                        //模拟音乐播放器放歌以触发videocache的缓存
-                        //1.1创建okHttpClient
-                        OkHttpClient okHttpClient = new OkHttpClient();
-
-                        //1.2创建Request对象
-                        Request okRequest = new Request.Builder().url(proxyUrl).build();
-
-                        //2.把Request对象封装成call对象
-                        Call call = okHttpClient.newCall(okRequest);
-
-                        //3.发起异步请求
-                        call.enqueue(new Callback() {
-                            @Override
-                            public void onFailure(Call call, IOException e) {
-                                e.printStackTrace();
-                            }
-                            @Override
-                            public void onResponse(Call call, Response response) throws IOException {
-                                InputStream inputStream = response.body().byteStream();
-                                webResourceResponse = new WebResourceResponse("video/avc", "utf-8", inputStream);
-                            }
-                        });
-                    }
-//                    is = null;
-                    return webResourceResponse;
-                }
-                 */
-//                else if (request.getUrl().toString().startsWith("https://jsxm.sharepoint.cn/sites/as-archive-cn-01")){
-//                    return new WebResourceResponse("video/mp4", "utf-8", is);
-//                }
                 return super.shouldInterceptRequest(view, request);
             }
 

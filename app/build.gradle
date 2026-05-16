@@ -54,8 +54,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.12.0'
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
@@ -96,6 +94,4 @@ dependencies {
     implementation(name:'floatserver-debug', ext:'aar')
 
     implementation 'com.kyleduo.switchbutton:library:2.1.0'
-
-    implementation 'com.danikula:videocache:2.7.1'
 }

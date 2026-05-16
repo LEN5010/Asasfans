@@ -23,7 +23,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.asasfans.R;
 import com.example.asasfans.data.AdvancedSearchDataBean;
 import com.example.asasfans.data.DBOpenHelper;
-import com.example.asasfans.data.VideoDataStoragedInMemory;
 import com.example.asasfans.data.VideoListRules;
 import com.example.asasfans.ui.customcomponent.RecyclerViewDecoration;
 import com.example.asasfans.ui.main.adapter.PubdateVideoAdapter;
@@ -55,7 +54,6 @@ public class BiliVideoFragment extends Fragment {
 //    private String VideoUrl;
     public static final int GET_DATA_SUCCESS = 1;
     public static final int NETWORK_ERROR = 2;
-    private List<VideoDataStoragedInMemory> videoDataStoragedInMemoryList = new ArrayList<>();
     private List<AdvancedSearchDataBean.DataBean.ResultBean> resultBeans = new ArrayList<>();
     public PubdateVideoAdapter pubdateVideoAdapter;
     private RecyclerView recyclerView;
@@ -209,9 +207,6 @@ public class BiliVideoFragment extends Fragment {
                     if (val != null && val.startsWith("{\"code\":0,\"message\":\"ok\"")) {
                         AdvancedSearchDataBean advancedSearchDataBean = gson.fromJson(val, AdvancedSearchDataBean.class);
                         List<AdvancedSearchDataBean.DataBean.ResultBean> allResultBeans = advancedSearchDataBean.getData().getResult();
-
-//                        List<List<String>> hVideosBvid = new ArrayList<>();
-//                        hVideosBvid = hPubdateVideoBean.getData().getResult();
                         int PastSize = resultBeans.size();
                         dbOpenHelper = new DBOpenHelper(getActivity(),
                                 "blackList.db", null, DBOpenHelper.DB_VERSION);
@@ -300,12 +295,6 @@ public class BiliVideoFragment extends Fragment {
             public void run() {
                 Message msg = new Message();
                 Bundle data = new Bundle();
-                // TODO
-                // 在这里进行 http request.网络请求相关操作
-//            page++;
-//            ACache aCache = ACache.get(getActivity());
-//            String tmpACache = aCache.getAsString(url);
-//            if (tmpACache == null) {
                 OkHttpClient client = new OkHttpClient.Builder().readTimeout(15, TimeUnit.SECONDS).build();
                 Request request = new Request.Builder().url(requestUrl)
                         .get().build();
@@ -316,17 +305,10 @@ public class BiliVideoFragment extends Fragment {
                     }
                     msg.what = GET_DATA_SUCCESS;
                     data.putString("AdvancedSearchDataBean", response.body().string());
-//                    aCache.put(url, tmp, ACache.TIME_HOUR);
                 } catch (IOException e) {
                     e.printStackTrace();
-//                page--;
                     msg.what = NETWORK_ERROR;
                 }
-//            }else {
-//                msg.what = GET_DATA_SUCCESS;
-//                data.putString("AdvancedSearchDataBean", aCache.getAsString(url));
-//                Log.i("ACache:AdvancedSearchDataBean", aCache.getAsString(url));
-//            }
                 msg.setData(data);
                 handler.sendMessage(msg);
             }

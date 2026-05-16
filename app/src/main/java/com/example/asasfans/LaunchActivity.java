@@ -1,8 +1,5 @@
 package com.example.asasfans;
 
-import static com.example.asasfans.ui.main.adapter.PubdateVideoAdapter.GET_DATA_SUCCESS;
-import static com.example.asasfans.ui.main.adapter.PubdateVideoAdapter.NETWORK_ERROR;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,6 +30,8 @@ import okhttp3.Response;
  */
 
 public class LaunchActivity extends AppCompatActivity {
+    private static final int GET_DATA_SUCCESS = 1;
+    private static final int NETWORK_ERROR = 2;
     private String latestVersion = "https://api.github.com/repos/LEN5010/Asasfans-Next/releases/latest";
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
