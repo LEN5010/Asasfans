@@ -33,7 +33,6 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         }
         if (i < 3) {
             createVersion3Tables(sqLiteDatabase);
-            sqLiteDatabase.execSQL("insert or ignore into blackWord(word) select tag from blackTag where tag is not null and tag != ''");
         }
     }
 

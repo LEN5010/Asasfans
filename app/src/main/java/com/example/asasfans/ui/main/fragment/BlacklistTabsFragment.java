@@ -92,7 +92,15 @@ public class BlacklistTabsFragment extends Fragment {
         TextView exportToClip = dialogView.findViewById(R.id.export_to_clip);
         TextView copyFromClip = dialogView.findViewById(R.id.copy_from_clip);
         TextView importFromEdittext = dialogView.findViewById(R.id.import_from_edittext);
+        TextView title = dialogView.findViewById(R.id.blacklist_dialog_title);
+        TextView description = dialogView.findViewById(R.id.blacklist_dialog_description);
+        TextView example = dialogView.findViewById(R.id.blacklist_dialog_example);
+        TextView note = dialogView.findViewById(R.id.blacklist_dialog_note);
         EditText edittext = dialogView.findViewById(R.id.edittext);
+        title.setText(getDialogTitle());
+        description.setText(getDialogDescription());
+        example.setText(getDialogExample());
+        note.setText("导入后当前列表会立即刷新。");
         edittext.setText("");
         edittext.setHint(getInputHint());
 
@@ -122,6 +130,9 @@ public class BlacklistTabsFragment extends Fragment {
         if ("subscribedUp".equals(table)) {
             return "每行一个：uid 或 uid,昵称 或 uid,昵称,备注";
         }
+        if ("blackTag".equals(table)) {
+            return "每行一个 Tag，也支持逗号或加号分隔";
+        }
         if ("blackMid".equals(table)) {
             return "每行一个 UID，也支持逗号或加号分隔";
         }
@@ -131,6 +142,58 @@ public class BlacklistTabsFragment extends Fragment {
         return "每行一个黑名单词，也支持逗号或加号分隔";
     }
 
+    private String getDialogTitle() {
+        return getListName() + "导入与导出";
+    }
+
+    private String getListName() {
+        if ("blackTag".equals(table)) {
+            return "屏蔽Tag";
+        }
+        if ("blackMid".equals(table)) {
+            return "黑名单UP";
+        }
+        if ("blackBvid".equals(table)) {
+            return "视频黑名单";
+        }
+        if ("subscribedUp".equals(table)) {
+            return "订阅UP";
+        }
+        return "屏蔽词";
+    }
+
+    private String getDialogDescription() {
+        if ("blackTag".equals(table)) {
+            return "屏蔽Tag只会精确匹配视频Tag，不会匹配标题、简介或分区。";
+        }
+        if ("blackMid".equals(table)) {
+            return "黑名单UP按B站UID屏蔽该UP主的视频。";
+        }
+        if ("blackBvid".equals(table)) {
+            return "视频黑名单按BV号屏蔽单个视频。";
+        }
+        if ("subscribedUp".equals(table)) {
+            return "订阅UP是本地订阅列表，用于订阅UP视频栏展示。";
+        }
+        return "屏蔽词会匹配标题、简介和分区，不再用于精确屏蔽Tag。";
+    }
+
+    private String getDialogExample() {
+        if ("blackTag".equals(table)) {
+            return "示例：思诺\n嘉然\n或：思诺+嘉然";
+        }
+        if ("blackMid".equals(table)) {
+            return "示例：672328094\n或：672328094+672346917";
+        }
+        if ("blackBvid".equals(table)) {
+            return "示例：BV1xx411c7mD\n或每行一个BV号。";
+        }
+        if ("subscribedUp".equals(table)) {
+            return "示例：672328094,嘉然今天吃什么\n也可以只填写UID。";
+        }
+        return "示例：抽奖\n切片合集\n或：抽奖+切片合集";
+    }
+
     private void exportToClipboard() {
         List<String> values = new ArrayList<>();
         for (Row row : rows) {
@@ -138,8 +201,8 @@ public class BlacklistTabsFragment extends Fragment {
         }
         String content = ApiConfig.listToString(values, "\n");
         ClipboardManager cm = (ClipboardManager) requireActivity().getSystemService(Context.CLIPBOARD_SERVICE);
-        cm.setPrimaryClip(ClipData.newPlainText(table, content));
-        Toast.makeText(getActivity(),"导出成功",Toast.LENGTH_SHORT).show();
+        cm.setPrimaryClip(ClipData.newPlainText(getDialogTitle(), content));
+        Toast.makeText(getActivity(), getListName() + "导出成功", Toast.LENGTH_SHORT).show();
     }
 
     private void insertStringToSqlite(String input){
@@ -164,6 +227,10 @@ public class BlacklistTabsFragment extends Fragment {
                 }
                 if ("subscribedUp".equals(table)) {
                     insertSubscribedUp(sqliteDatabase, raw);
+                } else if ("blackTag".equals(table)) {
+                    ContentValues values = new ContentValues();
+                    values.put("tag", value);
+                    sqliteDatabase.insertWithOnConflict("blackTag", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                 } else if ("blackMid".equals(table)) {
                     insertMid(sqliteDatabase, value);
                 } else if ("blackBvid".equals(table)) {
@@ -177,7 +244,7 @@ public class BlacklistTabsFragment extends Fragment {
                     sqliteDatabase.insertWithOnConflict("blackWord", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                 }
             }
-            Toast.makeText(getActivity(),"添加成功",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getListName() + "添加成功", Toast.LENGTH_SHORT).show();
         } finally {
             sqliteDatabase.close();
             dbOpenHelper.close();
@@ -230,8 +297,8 @@ public class BlacklistTabsFragment extends Fragment {
             for (String tag : tagTmp[1].split("\\+")) {
                 if (!tag.isEmpty()) {
                     ContentValues values = new ContentValues();
-                    values.put("word", tag);
-                    sqliteDatabase.insertWithOnConflict("blackWord", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+                    values.put("tag", tag);
+                    sqliteDatabase.insertWithOnConflict("blackTag", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                 }
             }
             for (String mid : midTmp[1].split("\\+")) {

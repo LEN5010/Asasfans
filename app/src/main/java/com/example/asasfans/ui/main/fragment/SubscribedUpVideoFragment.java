@@ -216,6 +216,7 @@ public class SubscribedUpVideoFragment extends Fragment {
         return blockRules.blackBvids.contains(bean.getBvid())
                 || blockRules.blackMids.contains(bean.getMid())
                 || VideoListRules.matchesBlackWord(bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getTname(), blockRules.blackWords)
+                || VideoListRules.matchesBlackTag(bean.getTag(), blockRules.blackTags)
                 || VideoListRules.isCarolRelated(bean.getMid(), bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getName());
     }
 
@@ -248,6 +249,7 @@ public class SubscribedUpVideoFragment extends Fragment {
         SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
         try {
             readStringSet(db, "blackWord", "word", rules.blackWords);
+            readStringSet(db, "blackTag", "tag", rules.blackTags);
             readStringSet(db, "blackBvid", "bvid", rules.blackBvids);
             readLongSet(db, "blackMid", "mid", rules.blackMids);
         } finally {
@@ -316,6 +318,7 @@ public class SubscribedUpVideoFragment extends Fragment {
 
     private static class LocalBlockRules {
         final Set<String> blackWords = new HashSet<>();
+        final Set<String> blackTags = new HashSet<>();
         final Set<String> blackBvids = new HashSet<>();
         final Set<Long> blackMids = new HashSet<>();
     }

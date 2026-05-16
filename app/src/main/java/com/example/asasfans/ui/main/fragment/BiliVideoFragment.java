@@ -54,12 +54,17 @@ public class BiliVideoFragment extends Fragment {
 //    private String VideoUrl;
     public static final int GET_DATA_SUCCESS = 1;
     public static final int NETWORK_ERROR = 2;
+    private static final int MAX_FILTER_SCAN_PAGES = 5;
+    private static final int MIN_VISIBLE_BATCH_SIZE = 10;
     private List<AdvancedSearchDataBean.DataBean.ResultBean> resultBeans = new ArrayList<>();
     public PubdateVideoAdapter pubdateVideoAdapter;
     private RecyclerView recyclerView;
-    private int page = 1;
     private SwipeRefreshLayout refreshLayout;
     private boolean isLoadingMore = false;
+    private boolean hasMore = true;
+    private int scanPageCount = 0;
+    private int loadStartSize = 0;
+    private int loadRawCount = 0;
     private ExecutorService cachedThreadPool =  Executors.newCachedThreadPool();;
     private boolean firstOnCreateView = true;
     private ApiConfig apiConfig;
@@ -149,16 +154,7 @@ public class BiliVideoFragment extends Fragment {
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.addItemDecoration(new RecyclerViewDecoration(12, 12));
         refreshLayout.setOnRefreshListener(() -> {
-            apiConfig.setPage(1);
-            resultBeans.clear();
-            pubdateVideoAdapter.notifyDataSetChanged();
-            try {
-                executeNetworkRequest(apiConfig.getUrl());
-            } catch (Exception e) {
-                e.printStackTrace();
-                Toast.makeText(getActivity(), "刷新失败，再试一次", Toast.LENGTH_SHORT).show();
-            }
-            refreshLayout.setRefreshing(false);
+            startLoad(true);
         });
 
         // Load-more via RecyclerView scroll detection
@@ -166,29 +162,47 @@ public class BiliVideoFragment extends Fragment {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if (dy > 0 && !isLoadingMore) {
+                if (dy > 0 && hasMore && !isLoadingMore) {
                     LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
                     if (manager != null && manager.findLastVisibleItemPosition() >= manager.getItemCount() - 2) {
-                        isLoadingMore = true;
                         apiConfig.pageSelfAdd();
-                        try {
-                            executeNetworkRequest(apiConfig.getUrl());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            apiConfig.pageSelfDecrement();
-                            isLoadingMore = false;
-                            Toast.makeText(getActivity(), "加载失败，再试一次", Toast.LENGTH_SHORT).show();
-                        }
+                        startLoad(false);
                     }
                 }
             }
         });
         if (firstOnCreateView) {
-            refreshLayout.setRefreshing(true);
-            executeNetworkRequest(apiConfig.getUrl());
+            startLoad(true);
             firstOnCreateView = false;
         }
         return view;
+    }
+
+    private void startLoad(boolean reset) {
+        if (isLoadingMore) {
+            return;
+        }
+        if (reset) {
+            apiConfig.setPage(1);
+            hasMore = true;
+            resultBeans.clear();
+            pubdateVideoAdapter.notifyDataSetChanged();
+        }
+        isLoadingMore = true;
+        refreshLayout.setRefreshing(true);
+        scanPageCount = 1;
+        loadStartSize = resultBeans.size();
+        loadRawCount = 0;
+        try {
+            executeNetworkRequest(apiConfig.getUrl());
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (!reset && apiConfig.getPage() > 1) {
+                apiConfig.pageSelfDecrement();
+            }
+            finishLoad();
+            Toast.makeText(getActivity(), reset ? "刷新失败，再试一次" : "加载失败，再试一次", Toast.LENGTH_SHORT).show();
+        }
     }
     private Handler handler = new Handler() {
         @Override
@@ -203,68 +217,46 @@ public class BiliVideoFragment extends Fragment {
             Gson gson =new Gson();
             switch (msg.what){
                 case GET_DATA_SUCCESS:
-                    refreshLayout.setRefreshing(false);
                     if (val != null && val.startsWith("{\"code\":0,\"message\":\"ok\"")) {
                         AdvancedSearchDataBean advancedSearchDataBean = gson.fromJson(val, AdvancedSearchDataBean.class);
                         List<AdvancedSearchDataBean.DataBean.ResultBean> allResultBeans = advancedSearchDataBean.getData().getResult();
                         int PastSize = resultBeans.size();
-                        dbOpenHelper = new DBOpenHelper(getActivity(),
-                                "blackList.db", null, DBOpenHelper.DB_VERSION);
-                        db = dbOpenHelper.getReadableDatabase();
-                        Cursor cursor = db.query("blackWord",null,null,null,null,null,null);
-                        List<String> blackWords = new ArrayList<>();
-                        if (cursor.getCount() > 0) {
-                            int wordColumn = cursor.getColumnIndexOrThrow("word");
-                            while (cursor.moveToNext()) {
-                                blackWords.add(cursor.getString(wordColumn));
-                                Log.i("blackWord", cursor.getString(wordColumn));
-                            }
-                        }
-                        cursor.close();
-                        cursor = db.query("subscribedUp",null,null,null,null,null,null);
-                        Set<Long> subscribedMids = new HashSet<>();
-                        if (cursor.getCount() > 0) {
-                            int midColumn = cursor.getColumnIndexOrThrow("mid");
-                            while (cursor.moveToNext()) {
-                                subscribedMids.add(cursor.getLong(midColumn));
-                            }
-                        }
-                        cursor.close();
+                        loadRawCount += allResultBeans.size();
+                        LocalBlockRules rules = loadLocalBlockRules();
                         int addVideoCount = 0;
                         List<AdvancedSearchDataBean.DataBean.ResultBean> visiblePageBeans = new ArrayList<>();
                         for (int i = 0; i < allResultBeans.size(); i++){
                             AdvancedSearchDataBean.DataBean.ResultBean bean = allResultBeans.get(i);
-                            boolean matchesBlackWord = VideoListRules.matchesBlackWord(
-                                    bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getTname(), blackWords);
-                            boolean matchesCarol = VideoListRules.isCarolRelated(
-                                    bean.getMid(), bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getName());
-                            if (!searchInSQL(db, bean.getBvid(), "blackBvid", "bvid") &&
-                                    !searchInSQL(db, String.valueOf(bean.getMid()), "blackMid", "mid") &&
-                                    !matchesBlackWord &&
-                                    !matchesCarol) {
+                            if (!isBlocked(bean, rules)) {
                                 visiblePageBeans.add(bean);
                                 addVideoCount++;
                             }
                         }
                         Collections.sort(visiblePageBeans, (left, right) ->
-                                VideoListRules.compareSubscribedUp(left.getMid(), right.getMid(), subscribedMids));
+                                VideoListRules.compareSubscribedUp(left.getMid(), right.getMid(), rules.subscribedMids));
                         resultBeans.addAll(visiblePageBeans);
                         if (allResultBeans.size() == 0){
-                            apiConfig.pageSelfDecrement();
-                            isLoadingMore = true; // no more data
-                            Toast.makeText(getActivity(),"后面没有内容了~",Toast.LENGTH_SHORT).show();
+                            if (apiConfig.getPage() > 1) {
+                                apiConfig.pageSelfDecrement();
+                            }
+                            hasMore = false;
+                            finishLoad();
+                            Toast.makeText(getActivity(), resultBeans.size() == loadStartSize && loadRawCount > 0
+                                    ? "当前规则屏蔽了较多内容，可到名单管理调整"
+                                    : "后面没有内容了~", Toast.LENGTH_SHORT).show();
                         }else if (addVideoCount == 0){
-                            Toast.makeText(getActivity(),"刚刚有一整页视频都被屏蔽掉了哦",Toast.LENGTH_SHORT).show();
+                            requestMoreForCurrentLoad();
+                        } else if (shouldAutoFillCurrentLoad()) {
+                            requestMoreForCurrentLoad();
+                        } else {
+                            finishLoad();
                         }
-                        db.close();
-                        dbOpenHelper.close();
-                        pubdateVideoAdapter.notifyItemRangeInserted(PastSize, addVideoCount);
-                        isLoadingMore = false;
+                        if (addVideoCount > 0) {
+                            pubdateVideoAdapter.notifyItemRangeInserted(PastSize, addVideoCount);
+                        }
                     }else {
-                        if (page > 1){
-
-                        }
-                        isLoadingMore = true; // no more data
+                        hasMore = false;
+                        finishLoad();
                         Toast.makeText(getActivity(),"后面没有内容了~",Toast.LENGTH_SHORT).show();
                     }
                     break;
@@ -272,18 +264,101 @@ public class BiliVideoFragment extends Fragment {
                     // Fragment 视图消失时会手动关闭线程池和 handler，
                     // 但是网络请求会报java.io.InterruptedIOException，之前在异常里并没有区分，全走网络错误了，
                     // 先这样办，能解决问题，以后再加异常类型区分
-                    refreshLayout.setRefreshing(false);
-                    isLoadingMore = false;
+                    finishLoad();
                     if (getActivity() != null) {
                         Toast.makeText(getActivity(), "网络消失了~", Toast.LENGTH_SHORT).show();
                         break;
                     }
             }
-            // TODO
-            // UI界面的更新等相关操作
         }
     };
 
+    private boolean shouldAutoFillCurrentLoad() {
+        return scanPageCount < MAX_FILTER_SCAN_PAGES
+                && resultBeans.size() - loadStartSize < MIN_VISIBLE_BATCH_SIZE;
+    }
+
+    private void requestMoreForCurrentLoad() {
+        if (scanPageCount >= MAX_FILTER_SCAN_PAGES) {
+            finishLoad();
+            if (loadRawCount > 0 && resultBeans.size() == loadStartSize) {
+                Toast.makeText(getActivity(), "当前规则屏蔽了较多内容，可到名单管理调整", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        scanPageCount++;
+        apiConfig.pageSelfAdd();
+        try {
+            executeNetworkRequest(apiConfig.getUrl());
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (apiConfig.getPage() > 1) {
+                apiConfig.pageSelfDecrement();
+            }
+            finishLoad();
+            Toast.makeText(getActivity(), "加载失败，再试一次", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void finishLoad() {
+        refreshLayout.setRefreshing(false);
+        isLoadingMore = false;
+    }
+
+    private boolean isBlocked(AdvancedSearchDataBean.DataBean.ResultBean bean, LocalBlockRules rules) {
+        return rules.blackBvids.contains(bean.getBvid())
+                || rules.blackMids.contains(bean.getMid())
+                || VideoListRules.matchesBlackWord(bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getTname(), rules.blackWords)
+                || VideoListRules.matchesBlackTag(bean.getTag(), rules.blackTags)
+                || VideoListRules.isCarolRelated(bean.getMid(), bean.getTitle(), bean.getDesc(), bean.getTag(), bean.getName());
+    }
+
+    private LocalBlockRules loadLocalBlockRules() {
+        LocalBlockRules rules = new LocalBlockRules();
+        DBOpenHelper helper = new DBOpenHelper(getActivity(), "blackList.db", null, DBOpenHelper.DB_VERSION);
+        SQLiteDatabase database = helper.getReadableDatabase();
+        try {
+            readStringSet(database, "blackWord", "word", rules.blackWords);
+            readStringSet(database, "blackTag", "tag", rules.blackTags);
+            readStringSet(database, "blackBvid", "bvid", rules.blackBvids);
+            readLongSet(database, "blackMid", "mid", rules.blackMids);
+            readLongSet(database, "subscribedUp", "mid", rules.subscribedMids);
+        } finally {
+            database.close();
+            helper.close();
+        }
+        return rules;
+    }
+
+    private void readStringSet(SQLiteDatabase database, String table, String column, Set<String> target) {
+        Cursor cursor = null;
+        try {
+            cursor = database.query(table, null, null, null, null, null, null);
+            int columnIndex = cursor.getColumnIndexOrThrow(column);
+            while (cursor.moveToNext()) {
+                target.add(cursor.getString(columnIndex));
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    private void readLongSet(SQLiteDatabase database, String table, String column, Set<Long> target) {
+        Cursor cursor = null;
+        try {
+            cursor = database.query(table, null, null, null, null, null, null);
+            int columnIndex = cursor.getColumnIndexOrThrow(column);
+            while (cursor.moveToNext()) {
+                target.add(cursor.getLong(columnIndex));
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
 
     private void executeNetworkRequest(String url) {
         cachedThreadPool.execute(createNetworkTask(url));
@@ -314,6 +389,15 @@ public class BiliVideoFragment extends Fragment {
             }
         };
     }
+
+    private static class LocalBlockRules {
+        final Set<String> blackWords = new HashSet<>();
+        final Set<String> blackTags = new HashSet<>();
+        final Set<String> blackBvids = new HashSet<>();
+        final Set<Long> blackMids = new HashSet<>();
+        final Set<Long> subscribedMids = new HashSet<>();
+    }
+
     public static boolean searchInSQL(SQLiteDatabase db, String str, String table, String col) {
 
         Cursor cursor = db.rawQuery(

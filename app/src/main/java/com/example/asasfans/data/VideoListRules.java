@@ -1,5 +1,8 @@
 package com.example.asasfans.data;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -10,7 +13,7 @@ public class VideoListRules {
     }
 
     public static boolean matchesBlackWord(String title, String desc, String tag, String tname, Iterable<String> words) {
-        String haystack = normalize(title) + "\n" + normalize(desc) + "\n" + normalize(tag) + "\n" + normalize(tname);
+        String haystack = normalize(title) + "\n" + normalize(desc) + "\n" + normalize(tname);
         for (String word : words) {
             String normalized = normalize(word);
             if (!normalized.isEmpty() && haystack.contains(normalized)) {
@@ -18,6 +21,36 @@ public class VideoListRules {
             }
         }
         return false;
+    }
+
+    public static boolean matchesBlackTag(String tag, Iterable<String> blockedTags) {
+        Set<String> videoTags = new HashSet<>(parseTags(tag));
+        if (videoTags.isEmpty()) {
+            return false;
+        }
+        for (String blockedTag : blockedTags) {
+            String normalized = normalize(blockedTag);
+            if (!normalized.isEmpty() && videoTags.contains(normalized)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static List<String> parseTags(String tag) {
+        List<String> tags = new ArrayList<>();
+        if (tag == null) {
+            return tags;
+        }
+        String normalized = tag.replace("'", "");
+        String[] parts = normalized.split(",");
+        for (String part : parts) {
+            String value = normalize(part);
+            if (!value.isEmpty()) {
+                tags.add(value);
+            }
+        }
+        return tags;
     }
 
     public static int compareSubscribedUp(long leftMid, long rightMid, Set<Long> subscribedMids) {

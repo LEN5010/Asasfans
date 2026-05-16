@@ -8,7 +8,7 @@ import com.example.asasfans.ui.main.fragment.BlacklistTabsFragment;
 import com.example.asasfans.ui.main.fragment.NullFragment;
 
 public class BlacklistPagerAdapter extends FragmentStateAdapter {
-    private static final String[] TAB_TITLES = new String[]{"黑名单词", "黑名单UP", "视频黑名单", "订阅UP"};
+    private static final String[] TAB_TITLES = new String[]{"屏蔽词", "屏蔽Tag", "黑名单UP", "视频黑名单", "订阅UP"};
 
     public BlacklistPagerAdapter(Fragment fragment) {
         super(fragment);
@@ -21,10 +21,12 @@ public class BlacklistPagerAdapter extends FragmentStateAdapter {
             case 0:
                 return BlacklistTabsFragment.newInstance("blackWord", "word", "word");
             case 1:
-                return BlacklistTabsFragment.newInstance("blackMid", "mid", "mid");
+                return BlacklistTabsFragment.newInstance("blackTag", "tag", "tag");
             case 2:
-                return BlacklistTabsFragment.newInstance("blackBvid", "Title", "bvid");
+                return BlacklistTabsFragment.newInstance("blackMid", "mid", "mid");
             case 3:
+                return BlacklistTabsFragment.newInstance("blackBvid", "Title", "bvid");
+            case 4:
                 return BlacklistTabsFragment.newInstance("subscribedUp", "subscribedUp", "mid");
             default:
                 return NullFragment.newInstance();

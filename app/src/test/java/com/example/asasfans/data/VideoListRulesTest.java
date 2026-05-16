@@ -11,11 +11,19 @@ import static org.junit.Assert.assertTrue;
 
 public class VideoListRulesTest {
     @Test
-    public void matchesBlackWord_checksTitleDescTagAndTypeName() {
+    public void matchesBlackWord_checksTitleDescAndTypeNameOnly() {
         assertTrue(VideoListRules.matchesBlackWord("标题", "简介命中词", "tag", "分区", Arrays.asList("命中词")));
-        assertTrue(VideoListRules.matchesBlackWord("标题", "简介", "嘉然,切片", "分区", Arrays.asList("切片")));
         assertTrue(VideoListRules.matchesBlackWord("标题", "简介", "tag", "娱乐", Arrays.asList("娱乐")));
+        assertFalse(VideoListRules.matchesBlackWord("标题", "简介", "嘉然,切片", "分区", Arrays.asList("切片")));
         assertFalse(VideoListRules.matchesBlackWord("标题", "简介", "tag", "分区", Arrays.asList("不存在")));
+    }
+
+    @Test
+    public void matchesBlackTag_checksTagsExactly() {
+        assertTrue(VideoListRules.matchesBlackTag("嘉然,切片", Arrays.asList("切片")));
+        assertTrue(VideoListRules.matchesBlackTag("嘉然, Carol", Arrays.asList("carol")));
+        assertFalse(VideoListRules.matchesBlackTag("嘉然,切片", Arrays.asList("切")));
+        assertFalse(VideoListRules.matchesBlackTag("嘉然,切片", Arrays.asList("不存在")));
     }
 
     @Test

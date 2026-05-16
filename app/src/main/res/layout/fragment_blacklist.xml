@@ -19,10 +19,12 @@
         android:layout_height="wrap_content">
 
 
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabs"
-            app:tabRippleColor="@android:color/transparent"
-            android:background="@color/tab_text_normal"
+	        <com.google.android.material.tabs.TabLayout
+	            android:id="@+id/tabs"
+	            app:tabRippleColor="@android:color/transparent"
+	            app:tabMode="scrollable"
+	            app:tabGravity="start"
+	            android:background="@color/tab_text_normal"
             app:tabSelectedTextColor="@color/cardWhite"
             app:tabIndicatorColor="@color/cardWhite"
             android:layout_width="match_parent"

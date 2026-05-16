@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.asasfans.R;
 import com.example.asasfans.data.AdvancedSearchDataBean;
 import com.example.asasfans.data.DBOpenHelper;
+import com.example.asasfans.data.VideoListRules;
 import com.example.asasfans.data.VideoPlaybackModeStore;
 import com.example.asasfans.ui.bili.BiliVideoDetailActivity;
 import com.google.android.flexbox.FlexboxLayout;
@@ -81,7 +82,8 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
     }
 
     public static String[] tagFormat(String tag){
-        return tag.replace("\'", "").replace(" ", "").split(",");
+        List<String> tags = VideoListRules.parseTags(tag);
+        return tags.toArray(new String[0]);
     }
     public static String stampToDatetime(String s) {
         if(s.length() == 10){
@@ -167,6 +169,41 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
         return position != RecyclerView.NO_POSITION && position >= 0 && position < resultBeans.size();
     }
 
+    private void removeVideoAt(int position) {
+        if (!isValidPosition(position)) {
+            return;
+        }
+        resultBeans.remove(position);
+        notifyItemRemoved(position);
+        notifyItemRangeChanged(position, getItemCount() - position);
+    }
+
+    private void removeVideosByMid(long mid) {
+        int removedCount = 0;
+        for (int i = resultBeans.size() - 1; i >= 0; i--) {
+            if (resultBeans.get(i).getMid() == mid) {
+                resultBeans.remove(i);
+                removedCount++;
+            }
+        }
+        if (removedCount > 0) {
+            notifyDataSetChanged();
+        }
+    }
+
+    private void removeVideosByTags(List<String> tags) {
+        int removedCount = 0;
+        for (int i = resultBeans.size() - 1; i >= 0; i--) {
+            if (VideoListRules.matchesBlackTag(resultBeans.get(i).getTag(), tags)) {
+                resultBeans.remove(i);
+                removedCount++;
+            }
+        }
+        if (removedCount > 0) {
+            notifyDataSetChanged();
+        }
+    }
+
 
     @NonNull
     @Override
@@ -205,19 +242,25 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                     @Override
                     public void onClick(View view) {
                         Log.i("appCompatButton", "onClick");
+                        int position = videoViewHolder.getBindingAdapterPosition();
+                        if (!isValidPosition(position)) {
+                            dialog.dismiss();
+                            return;
+                        }
+                        AdvancedSearchDataBean.DataBean.ResultBean video = resultBeans.get(position);
                         try {
                             DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                             SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                             ContentValues values = new ContentValues();
-                            values.put("bvid", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getBvid());
-                            values.put("PicUrl", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getPic());
-                            values.put("Title", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTitle());
-                            values.put("Duration", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getDuration());
-                            values.put("Author", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getName());
-                            values.put("ViewNum", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getView());
-                            values.put("LikeNum", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getLike());
-                            values.put("Tname", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTname());
-                            sqliteDatabase.insert("blackBvid", null, values);
+                            values.put("bvid", video.getBvid());
+                            values.put("PicUrl", video.getPic());
+                            values.put("Title", video.getTitle());
+                            values.put("Duration", video.getDuration());
+                            values.put("Author", video.getName());
+                            values.put("ViewNum", video.getView());
+                            values.put("LikeNum", video.getLike());
+                            values.put("Tname", video.getTname());
+                            sqliteDatabase.insertWithOnConflict("blackBvid", null, values, SQLiteDatabase.CONFLICT_IGNORE);
 
                             dbOpenHelper.close();
                             sqliteDatabase.close();
@@ -225,9 +268,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                             e.printStackTrace();
                             Toast.makeText(mContext, e.toString(), Toast.LENGTH_SHORT).show();
                         }
-                        resultBeans.remove(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRemoved(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRangeChanged(videoViewHolder.getBindingAdapterPosition(), getItemCount());
+                        removeVideoAt(position);
                         Toast.makeText(mContext,"屏蔽视频成功",Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                     }
@@ -249,18 +290,22 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                 blacklistAuthor.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        int position = videoViewHolder.getBindingAdapterPosition();
+                        if (!isValidPosition(position)) {
+                            dialog.dismiss();
+                            return;
+                        }
+                        long mid = resultBeans.get(position).getMid();
                         DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                         SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                         ContentValues values = new ContentValues();
-                        values.put("mid", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getMid());
-                        sqliteDatabase.insert("blackMid", null, values);
+                        values.put("mid", mid);
+                        sqliteDatabase.insertWithOnConflict("blackMid", null, values, SQLiteDatabase.CONFLICT_IGNORE);
 
                         dbOpenHelper.close();
                         sqliteDatabase.close();
 
-                        resultBeans.remove(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRemoved(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRangeChanged(videoViewHolder.getBindingAdapterPosition(), getItemCount());
+                        removeVideosByMid(mid);
 
                         dialog.dismiss();
                         Toast.makeText(mContext,"屏蔽UP主成功",Toast.LENGTH_SHORT).show();
@@ -285,22 +330,20 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                         }else {
 
                             for (String tmp : tags){
-                                values.put("word", tmp);
-                                sqliteDatabase.insertWithOnConflict("blackWord", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+                                values.clear();
+                                values.put("tag", tmp);
+                                sqliteDatabase.insertWithOnConflict("blackTag", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                                 Log.i("blacklistTag", tmp);
                             }
 
                             Toast.makeText(mContext,"屏蔽TAG成功",Toast.LENGTH_SHORT).show();
 
-                            resultBeans.remove(videoViewHolder.getBindingAdapterPosition());
-                            notifyItemRemoved(videoViewHolder.getBindingAdapterPosition());
-                            notifyItemRangeChanged(videoViewHolder.getBindingAdapterPosition(), getItemCount());
+                            removeVideosByTags(tags);
 
                             dialog.dismiss();
                         }
                         sqliteDatabase.close();
                         dbOpenHelper.close();
-                        sqliteDatabase.close();
                     }
                 });
                 dialog.show();
@@ -350,19 +393,25 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                     @Override
                     public void onClick(View view) {
                         Log.i("appCompatButton", "onClick");
+                        int position = videoViewHolder.getBindingAdapterPosition();
+                        if (!isValidPosition(position)) {
+                            dialog.dismiss();
+                            return;
+                        }
+                        AdvancedSearchDataBean.DataBean.ResultBean video = resultBeans.get(position);
                         try {
                             DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                             SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                             ContentValues values = new ContentValues();
-                            values.put("bvid", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getBvid());
-                            values.put("PicUrl", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getPic());
-                            values.put("Title", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTitle());
-                            values.put("Duration", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getDuration());
-                            values.put("Author", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getName());
-                            values.put("ViewNum", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getView());
-                            values.put("LikeNum", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getLike());
-                            values.put("Tname", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTname());
-                            sqliteDatabase.insert("blackBvid", null, values);
+                            values.put("bvid", video.getBvid());
+                            values.put("PicUrl", video.getPic());
+                            values.put("Title", video.getTitle());
+                            values.put("Duration", video.getDuration());
+                            values.put("Author", video.getName());
+                            values.put("ViewNum", video.getView());
+                            values.put("LikeNum", video.getLike());
+                            values.put("Tname", video.getTname());
+                            sqliteDatabase.insertWithOnConflict("blackBvid", null, values, SQLiteDatabase.CONFLICT_IGNORE);
 
                             dbOpenHelper.close();
                             sqliteDatabase.close();
@@ -370,9 +419,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                             e.printStackTrace();
                             Toast.makeText(mContext, e.toString(), Toast.LENGTH_SHORT).show();
                         }
-                        resultBeans.remove(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRemoved(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRangeChanged(videoViewHolder.getBindingAdapterPosition(), getItemCount());
+                        removeVideoAt(position);
                         Toast.makeText(mContext,"屏蔽视频成功",Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                     }
@@ -394,18 +441,22 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                 blacklistAuthor.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        int position = videoViewHolder.getBindingAdapterPosition();
+                        if (!isValidPosition(position)) {
+                            dialog.dismiss();
+                            return;
+                        }
+                        long mid = resultBeans.get(position).getMid();
                         DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                         SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                         ContentValues values = new ContentValues();
-                        values.put("mid", resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getMid());
-                        sqliteDatabase.insert("blackMid", null, values);
+                        values.put("mid", mid);
+                        sqliteDatabase.insertWithOnConflict("blackMid", null, values, SQLiteDatabase.CONFLICT_IGNORE);
 
                         dbOpenHelper.close();
                         sqliteDatabase.close();
 
-                        resultBeans.remove(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRemoved(videoViewHolder.getBindingAdapterPosition());
-                        notifyItemRangeChanged(videoViewHolder.getBindingAdapterPosition(), getItemCount());
+                        removeVideosByMid(mid);
 
                         dialog.dismiss();
                         Toast.makeText(mContext,"屏蔽UP主成功",Toast.LENGTH_SHORT).show();
@@ -430,22 +481,20 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                         }else {
 
                             for (String tmp : tags){
-                                values.put("word", tmp);
-                                sqliteDatabase.insertWithOnConflict("blackWord", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+                                values.clear();
+                                values.put("tag", tmp);
+                                sqliteDatabase.insertWithOnConflict("blackTag", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                                 Log.i("blacklistTag", tmp);
                             }
 
                             Toast.makeText(mContext,"屏蔽TAG成功",Toast.LENGTH_SHORT).show();
 
-                            resultBeans.remove(videoViewHolder.getBindingAdapterPosition());
-                            notifyItemRemoved(videoViewHolder.getBindingAdapterPosition());
-                            notifyItemRangeChanged(videoViewHolder.getBindingAdapterPosition(), getItemCount());
+                            removeVideosByTags(tags);
 
                             dialog.dismiss();
                         }
                         sqliteDatabase.close();
                         dbOpenHelper.close();
-                        sqliteDatabase.close();
                     }
                 });
                 dialog.show();

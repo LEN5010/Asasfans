@@ -68,6 +68,10 @@ public class ApiConfig {
         this.page++;
     }
 
+    public int getPage() {
+        return page;
+    }
+
     public void pageSelfDecrement(){
         this.page--;
     }
