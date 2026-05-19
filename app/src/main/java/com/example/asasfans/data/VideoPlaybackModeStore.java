@@ -3,6 +3,10 @@ package com.example.asasfans.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+/**
+ * @author LEN5010
+ * @description 全局视频播放模式持久化，保存 App 内播放或跳转 B 站的用户选择。
+ */
 public final class VideoPlaybackModeStore {
     public static final String MODE_APP = "app";
     public static final String MODE_EXTERNAL = "external";

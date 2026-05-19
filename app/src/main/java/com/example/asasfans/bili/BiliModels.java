@@ -4,6 +4,10 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 登录、视频、播放地址和评论接口的数据模型集合。
+ */
 public class BiliModels {
     public static class BaseResponse {
         public int code;

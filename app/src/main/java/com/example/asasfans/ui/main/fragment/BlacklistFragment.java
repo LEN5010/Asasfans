@@ -15,6 +15,10 @@ import com.example.asasfans.ui.main.adapter.BlacklistPagerAdapter;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+/**
+ * @author LEN5010
+ * @description 名单管理容器页面，承载各类黑名单和订阅 UP 的 Tab 切换。
+ */
 public class BlacklistFragment extends Fragment {
     private ViewPager2 viewPager;
     private ViewPager2.OnPageChangeCallback pageChangeCallback;

@@ -4,8 +4,9 @@ import java.util.List;
 
 /**
  * @author: akari
+ * @author LEN5010
  * @date: 2022/3/27
- * @description $
+ * @description GitHub Release API 响应数据模型，用于版本检查和升级提示。
  */
 public class GithubVersionBean {
 

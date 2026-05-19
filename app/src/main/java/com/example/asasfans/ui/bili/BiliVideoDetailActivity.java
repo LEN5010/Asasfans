@@ -50,6 +50,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 视频详情页，负责 App 内播放、清晰度选择、全屏、分 P 和评论展示。
+ */
 public class BiliVideoDetailActivity extends AppCompatActivity {
     public static final String EXTRA_BVID = "bvid";
     public static final String EXTRA_TITLE = "title";

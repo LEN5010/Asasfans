@@ -11,6 +11,10 @@ import androidx.fragment.app.Fragment;
 
 import com.example.asasfans.R;
 
+/**
+ * @author LEN5010
+ * @description 空占位 Fragment，用于未知或暂不可用页面的兜底展示。
+ */
 public class NullFragment extends Fragment {
     public static NullFragment newInstance() {
         NullFragment fragment = new NullFragment();

@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * @author akarinini
- * @description api配置
+ * @author LEN5010
+ * @description A-SOUL 视频搜索接口 URL 配置和查询参数构造器。
  */
 public class ApiConfig {
     private static final String BASE_URL = "https://api.asoul.us.kg/asasfans/v2";

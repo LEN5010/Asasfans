@@ -6,6 +6,10 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+/**
+ * @author LEN5010
+ * @description 本地黑名单、屏蔽词和订阅 UP 数据库的建表与升级助手。
+ */
 public class DBOpenHelper extends SQLiteOpenHelper {
     public static final int DB_VERSION = 3;
 

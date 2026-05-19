@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 视频仓库，负责视频详情、播放地址、UP 投稿列表和卡片数据映射。
+ */
 public class BiliVideoRepository {
     private static final String VIEW_URL = "https://api.bilibili.com/x/web-interface/wbi/view";
     private static final String PLAY_URL = "https://api.bilibili.com/x/player/wbi/playurl";

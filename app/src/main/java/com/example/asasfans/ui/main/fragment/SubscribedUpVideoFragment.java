@@ -41,6 +41,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * @author LEN5010
+ * @description 订阅 UP 视频列表页面，读取本地订阅并合并展示 UP 投稿。
+ */
 public class SubscribedUpVideoFragment extends Fragment {
     private static final int PAGE_SIZE_PER_UP = 10;
 

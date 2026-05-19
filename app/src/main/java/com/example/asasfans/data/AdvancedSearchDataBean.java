@@ -2,6 +2,11 @@ package com.example.asasfans.data;
 
 
 import java.util.List;
+
+/**
+ * @author LEN5010
+ * @description A-SOUL 视频搜索接口响应数据模型。
+ */
 public class AdvancedSearchDataBean {
 
     /**

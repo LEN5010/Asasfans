@@ -49,6 +49,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * @author LEN5010
+ * @description 设置页面，负责版本检查、反馈入口、缓存清理和悬浮球开关。
+ */
 public class ConfigActivity extends AppCompatActivity implements View.OnClickListener{
     private static final int GET_DATA_SUCCESS = 1;
     private static final int NETWORK_ERROR = 2;

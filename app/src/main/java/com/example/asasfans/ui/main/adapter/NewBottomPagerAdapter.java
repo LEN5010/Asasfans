@@ -12,6 +12,10 @@ import com.example.asasfans.ui.main.fragment.NewToolsFragment;
 import com.example.asasfans.ui.main.fragment.NullFragment;
 import com.example.asasfans.ui.main.fragment.WebFragment;
 
+/**
+ * @author LEN5010
+ * @description 主框架页面 Adapter，承载视频、音乐、工具、日历、账号和名单管理页面。
+ */
 public class NewBottomPagerAdapter extends FragmentStateAdapter {
     private static final int TAB_COUNT = 6;
     private static Object currentFragment;

@@ -22,6 +22,10 @@ import java.util.Locale;
 import coil.Coil;
 import coil.request.ImageRequest;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 评论列表 Adapter，负责评论内容、头像和互动数据展示。
+ */
 public class BiliCommentAdapter extends RecyclerView.Adapter<BiliCommentAdapter.CommentViewHolder> {
     private final Context context;
     private final List<BiliModels.Reply> replies = new ArrayList<>();

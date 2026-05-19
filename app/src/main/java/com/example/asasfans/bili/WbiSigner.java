@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * @author LEN5010
+ * @description Bilibili WBI 签名工具，生成带 wts 和 w_rid 的接口查询参数。
+ */
 public class WbiSigner {
     private static final int[] MIXIN_KEY_ENC_TAB = new int[]{
             46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,

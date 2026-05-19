@@ -4,6 +4,10 @@ import java.io.IOException;
 
 import okhttp3.HttpUrl;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 视频评论仓库，负责只读评论列表请求和错误封装。
+ */
 public class BiliCommentRepository {
     private static final String REPLY_URL = "https://api.bilibili.com/x/v2/reply";
     public static final int COMMENT_TYPE_VIDEO = 1;

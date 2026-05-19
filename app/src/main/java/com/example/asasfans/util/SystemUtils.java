@@ -18,7 +18,8 @@ import java.util.List;
 
 /**
  * @author akarinini
- * @description:
+ * @author LEN5010
+ * @description 系统工具方法，提供应用置顶、前台判断和网络文件读取等辅助能力。
  * @date :2022/4/21 13:07
  */
 public class SystemUtils {

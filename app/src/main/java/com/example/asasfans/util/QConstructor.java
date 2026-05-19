@@ -6,7 +6,8 @@ import java.util.List;
 
 /**
  * @author akarinini
- * @description q查询语句构造类
+ * @author LEN5010
+ * @description 视频搜索 q 参数构造工具，拼接字段、关键字和查询类型。
  */
 public class QConstructor {
     private List<QArray> qArrays;

@@ -6,6 +6,10 @@ import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 登录仓库，处理二维码登录、登录状态检查和凭据保存。
+ */
 public class BiliAuthRepository {
     private static final String QR_GENERATE_URL = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate";
     private static final String QR_POLL_URL = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll";

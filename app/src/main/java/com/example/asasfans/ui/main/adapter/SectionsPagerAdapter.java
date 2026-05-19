@@ -16,6 +16,10 @@ import com.example.asasfans.util.QConstructor;
 
 import java.util.Arrays;
 
+/**
+ * @author LEN5010
+ * @description 视频首页分页 Adapter，提供分类视频流和订阅 UP 视频栏。
+ */
 public class SectionsPagerAdapter extends FragmentStateAdapter {
 
     @StringRes

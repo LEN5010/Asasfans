@@ -10,8 +10,9 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 /**
  * @author: akari
+ * @author LEN5010
  * @date: 2022/3/5
- * @description recycleview添加边距$
+ * @description RecyclerView 间距装饰器，为列表和网格 item 添加统一边距。
  */
 public class RecyclerViewDecoration extends RecyclerView.ItemDecoration {
 

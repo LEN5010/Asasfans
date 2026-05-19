@@ -67,7 +67,8 @@ import java.util.Map;
 
 /**
  * @author akarinini
- * @description 测试用页面，目前作为主页面
+ * @author LEN5010
+ * @description Material 3 主界面 Activity，承载侧边栏导航、页面切换和全局工具栏操作。
  *              2022/3/03 修改底部导航栏可以动态改变标签
  *              2022/3/7 更新了图片加载方式。之前是自己写的一个根据url加载图片的imageview，
  *                       问题在于它把全部的图片放在了内存中，浏览几百个视频就oom然后crash掉了，

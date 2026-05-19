@@ -12,7 +12,8 @@ import com.example.asasfans.R;
 
 /**
  * @author akarinini
- * @description video_recyclerview.xml的RecyclerView.ViewHolder
+ * @author LEN5010
+ * @description 视频卡片 ViewHolder，绑定 video_recyclerview.xml 中的封面、标题和统计信息控件。
  */
 
 public class VideoViewHolder extends RecyclerView.ViewHolder {

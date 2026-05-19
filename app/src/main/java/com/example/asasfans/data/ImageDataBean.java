@@ -4,8 +4,9 @@ import java.util.List;
 
 /**
  * @author: akari
+ * @author LEN5010
  * @date: 2022/3/8
- * @description $
+ * @description 图片接口响应数据模型，保留图片工具相关数据结构。
  */
 public class ImageDataBean {
 

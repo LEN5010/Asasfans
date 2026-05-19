@@ -44,6 +44,7 @@ import java.util.Locale;
 
 /**
  * @author akarinini
+ * @author LEN5010
  * @description 视频列表 Adapter。
  */
 

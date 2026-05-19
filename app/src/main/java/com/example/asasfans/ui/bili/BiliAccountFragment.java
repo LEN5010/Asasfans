@@ -41,6 +41,10 @@ import java.util.concurrent.Executors;
 import coil.Coil;
 import coil.request.ImageRequest;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 账号页面，展示登录态并提供二维码登录和官方 WebView 登录。
+ */
 public class BiliAccountFragment extends Fragment {
     private static final int QR_CODE_SIZE = 640;
     private static final long POLL_DELAY_MS = 2000L;

@@ -15,6 +15,10 @@ import com.example.asasfans.ui.main.adapter.SectionsPagerAdapter;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+/**
+ * @author LEN5010
+ * @description 视频首页容器，展示视频分类 Tab 和对应列表页面。
+ */
 public class MainFragment extends Fragment {
 
     public static MainFragment newInstance() {

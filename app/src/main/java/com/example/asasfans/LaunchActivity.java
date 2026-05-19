@@ -21,12 +21,8 @@ import okhttp3.Response;
 
 /**
  * @author akarinini
- * @description 启动页面，在启动页面里先尝试获取
- *              http://124.223.8.236:5200/AsoulRT-top30，
- *              http://124.223.8.236:5200/AsoulPudateVedio?page=1，
- *              http://124.223.8.236:5200/AsoulMostViewVedio?page=1，
- *              成功后才能进入app，实际上并没有必要这么设计，但是也无关紧要
- *              2022/3/19 启动页面现在什么也不干
+ * @author LEN5010
+ * @description 应用启动页，初始化本地数据库并检查最新版本后进入主界面。
  */
 
 public class LaunchActivity extends AppCompatActivity {

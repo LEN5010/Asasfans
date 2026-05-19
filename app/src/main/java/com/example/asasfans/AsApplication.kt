@@ -11,6 +11,10 @@ import coil.request.CachePolicy
 import coil.transform.RoundedCornersTransformation
 import java.io.File
 
+/**
+ * @author LEN5010
+ * @description 应用级初始化入口，配置全局上下文和 Coil 图片加载器。
+ */
 class AsApplication : Application() {
     companion object {
         @SuppressLint("StaticFieldLeak")

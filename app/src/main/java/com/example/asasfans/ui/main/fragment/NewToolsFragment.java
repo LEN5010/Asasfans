@@ -39,7 +39,8 @@ import java.util.Random;
 
 /**
  * @author akarinini
- * @description:
+ * @author LEN5010
+ * @description 工具页面，提供常用 A-SOUL 工具站点选择、刷新、复制链接和浏览器打开。
  * @date :2022/4/13 15:46
  */
 public class NewToolsFragment extends Fragment {

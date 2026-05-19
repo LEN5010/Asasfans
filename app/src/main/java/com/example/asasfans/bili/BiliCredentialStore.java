@@ -9,6 +9,10 @@ import androidx.security.crypto.MasterKey;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * @author LEN5010
+ * @description Bilibili 登录凭据存储，使用加密 SharedPreferences 管理敏感 Cookie。
+ */
 public class BiliCredentialStore {
     private static final String PREF_NAME = "bili_credentials";
     private static final String KEY_SESSDATA = "SESSDATA";

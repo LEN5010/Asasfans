@@ -47,7 +47,8 @@ import com.example.asasfans.R;
 
 /**
  * @author akarinini
- * @description webFragment，使用WebView直接加载URL显示，属于BottomPagerAdapter
+ * @author LEN5010
+ * @description 通用 WebView 页面，用于音乐、日历和工具站点加载及网页操作。
  */
 
 public class WebFragment extends Fragment {

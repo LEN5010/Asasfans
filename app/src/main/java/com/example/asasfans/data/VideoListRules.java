@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * @author LEN5010
+ * @description 视频列表本地过滤规则，处理屏蔽词、屏蔽 Tag 和珈乐相关内容过滤。
+ */
 public class VideoListRules {
     public static final long CAROL_MID = 351609538L;
 

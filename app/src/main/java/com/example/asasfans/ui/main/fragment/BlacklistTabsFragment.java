@@ -34,6 +34,10 @@ import com.orhanobut.dialogplus.ViewHolder;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author LEN5010
+ * @description 单个名单 Tab 页面，负责名单数据展示、导入、导出和删除。
+ */
 public class BlacklistTabsFragment extends Fragment {
     private String table;
     private String displayColumn;

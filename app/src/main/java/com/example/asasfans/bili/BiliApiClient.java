@@ -19,6 +19,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * @author LEN5010
+ * @description Bilibili HTTP 客户端，统一请求头、Cookie、JSON 解析和媒体数据源配置。
+ */
 public class BiliApiClient {
     public static final String WEB_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
     public static final String BILI_REFERER = "https://www.bilibili.com/";

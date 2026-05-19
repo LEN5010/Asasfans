@@ -7,6 +7,10 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import com.example.asasfans.ui.main.fragment.BlacklistTabsFragment;
 import com.example.asasfans.ui.main.fragment.NullFragment;
 
+/**
+ * @author LEN5010
+ * @description 名单管理分页 Adapter，负责屏蔽词、屏蔽 Tag、黑名单和订阅 UP 页面切换。
+ */
 public class BlacklistPagerAdapter extends FragmentStateAdapter {
     private static final String[] TAB_TITLES = new String[]{"屏蔽词", "屏蔽Tag", "黑名单UP", "视频黑名单", "订阅UP"};
 
