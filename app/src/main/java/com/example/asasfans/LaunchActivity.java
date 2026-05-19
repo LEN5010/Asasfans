@@ -36,6 +36,7 @@ public class LaunchActivity extends AppCompatActivity {
         DBOpenHelper dbOpenHelper = new DBOpenHelper(this,"blackList.db",null, DBOpenHelper.DB_VERSION);
         dbOpenHelper.close();
         setContentView(R.layout.activity_lanch);
+        // 启动页只做轻量初始化和版本检查，结果无论成功失败都进入主界面。
         new Thread(networkTask).start();
     }
 
@@ -51,10 +52,8 @@ public class LaunchActivity extends AppCompatActivity {
             Intent intent = new Intent(LaunchActivity.this, TestActivity.class);
             intent.putExtras(data);
             startActivity(intent);
-            //结束当前的 Activity
+            // 结束启动页，避免返回键回到空白启动界面。
             LaunchActivity.this.finish();
-            // TODO
-            // UI界面的更新等相关操作
         }
     };
 
@@ -68,8 +67,7 @@ public class LaunchActivity extends AppCompatActivity {
             ACache aCache = ACache.get(LaunchActivity.this);
             String tmpACache =  aCache.getAsString("latestVersion");
             if (tmpACache == null) {
-                // TODO
-                // 在这里进行 http request.网络请求相关操作
+                // GitHub latest release 响应缓存一天，降低冷启动时的网络失败影响。
                 OkHttpClient client = new OkHttpClient.Builder().readTimeout(5, TimeUnit.SECONDS).build();
                 Request request = new Request.Builder().url(latestVersion)
                         .get().build();

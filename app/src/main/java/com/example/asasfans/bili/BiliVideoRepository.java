@@ -31,6 +31,9 @@ public class BiliVideoRepository {
         this.wbiSigner = wbiSigner;
     }
 
+    /**
+     * 获取视频详情和分 P 信息，播放页依赖返回的 aid/cid/pages/owner。
+     */
     public BiliModels.VideoViewResponse getVideoView(String bvid) throws IOException {
         ensureWbiKeys();
         Map<String, String> params = new HashMap<>();
@@ -41,6 +44,9 @@ public class BiliVideoRepository {
         return response;
     }
 
+    /**
+     * 获取 UP 投稿归档；匿名访问可能触发 Bilibili 风控，UI 层会给出登录建议。
+     */
     public BiliModels.SpaceArchiveResponse getUserArchiveVideos(long mid, int page, int pageSize) throws IOException {
         ensureWbiKeys();
         Map<String, String> params = new HashMap<>();
@@ -59,6 +65,9 @@ public class BiliVideoRepository {
         return getDashPlayUrl(bvid, cid, 80);
     }
 
+    /**
+     * DASH 请求优先用于 App 内播放，Media3 会分别加载视频流和音频流。
+     */
     public BiliModels.PlayUrlResponse getDashPlayUrl(String bvid, long cid, int qn) throws IOException {
         Map<String, String> params = basePlayParams(bvid, cid);
         params.put("fnval", "16");
@@ -70,6 +79,9 @@ public class BiliVideoRepository {
         return getMp4PlayUrl(bvid, cid, 64);
     }
 
+    /**
+     * MP4 地址作为 DASH 获取或播放失败后的兜底方案。
+     */
     public BiliModels.PlayUrlResponse getMp4PlayUrl(String bvid, long cid, int qn) throws IOException {
         Map<String, String> params = basePlayParams(bvid, cid);
         params.put("fnval", "1");
@@ -83,6 +95,9 @@ public class BiliVideoRepository {
         return pickDashVideoUrl(response, 0);
     }
 
+    /**
+     * 选择可播放视频轨：优先指定清晰度的 AVC/H.264，自动模式选最高可用 AVC。
+     */
     public String pickDashVideoUrl(BiliModels.PlayUrlResponse response, int requestedQn) {
         if (response == null || response.data == null || response.data.dash == null || response.data.dash.video == null) {
             return "";
@@ -113,6 +128,9 @@ public class BiliVideoRepository {
         return best == null ? "" : best.baseUrl;
     }
 
+    /**
+     * 构建清晰度下拉选项，优先使用接口返回的 accept_quality/accept_description。
+     */
     public List<BiliModels.VideoQuality> buildQualityOptions(BiliModels.PlayUrlResponse response) {
         List<BiliModels.VideoQuality> options = new ArrayList<>();
         options.add(new BiliModels.VideoQuality(0, "自动", true));
@@ -147,6 +165,9 @@ public class BiliVideoRepository {
         return options;
     }
 
+    /**
+     * 音频优先 30280，缺失时降级到接口返回的最高可用音频轨。
+     */
     public String pickDashAudioUrl(BiliModels.PlayUrlResponse response) {
         if (response == null || response.data == null || response.data.dash == null || response.data.dash.audio == null) {
             return "";
@@ -164,6 +185,9 @@ public class BiliVideoRepository {
         return best == null ? "" : best.baseUrl;
     }
 
+    /**
+     * MP4 直链可能在 url 或 backup_url 中，取第一个可用地址。
+     */
     public String pickMp4Url(BiliModels.PlayUrlResponse response) {
         if (response == null || response.data == null || response.data.durl == null || response.data.durl.isEmpty()) {
             return "";
@@ -215,6 +239,9 @@ public class BiliVideoRepository {
         }
     }
 
+    /**
+     * 将 Bilibili 空间投稿结构转成现有视频卡片模型，便于复用列表 Adapter。
+     */
     public List<AdvancedSearchDataBean.DataBean.ResultBean> mapSpaceArchiveVideos(BiliModels.SpaceArchiveResponse response) {
         List<AdvancedSearchDataBean.DataBean.ResultBean> videos = new ArrayList<>();
         if (response == null || response.data == null || response.data.list == null || response.data.list.vlist == null) {
@@ -228,6 +255,9 @@ public class BiliVideoRepository {
         return videos;
     }
 
+    /**
+     * 空间投稿接口字段与站内搜索字段不完全一致，缺失的统计字段统一置零。
+     */
     public AdvancedSearchDataBean.DataBean.ResultBean mapSpaceArchiveVideo(BiliModels.SpaceArchiveVideo video) {
         AdvancedSearchDataBean.DataBean.ResultBean result = new AdvancedSearchDataBean.DataBean.ResultBean();
         result.setAid(video.aid);
@@ -255,6 +285,9 @@ public class BiliVideoRepository {
         return result;
     }
 
+    /**
+     * 将 Bilibili 的 mm:ss 或 hh:mm:ss 时长格式转换成秒。
+     */
     public static int lengthToSeconds(String length) {
         if (length == null || length.trim().isEmpty()) {
             return 0;
@@ -268,6 +301,7 @@ public class BiliVideoRepository {
     }
 
     private BiliModels.PlayUrlResponse getPlayUrl(String bvid, Map<String, String> params) throws IOException {
+        // 播放地址接口同样需要 WBI 签名和视频页 Referer。
         ensureWbiKeys();
         String url = BiliApiClient.appendQuery(PLAY_URL, wbiSigner.signToQuery(params));
         BiliModels.PlayUrlResponse response = apiClient.get(url, videoReferer(bvid), BiliModels.PlayUrlResponse.class);
@@ -286,6 +320,7 @@ public class BiliVideoRepository {
     }
 
     private void ensureWbiKeys() throws IOException {
+        // wbi_img 即使未登录也可能存在，因此这里只要求 key 可用，不强制登录。
         if (wbiSigner.hasFreshKeys()) {
             return;
         }

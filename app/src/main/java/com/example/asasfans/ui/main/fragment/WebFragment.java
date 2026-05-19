@@ -110,6 +110,7 @@ public class WebFragment extends Fragment {
     }
 
     private void afterFileChooseGoing(int resultCode, Intent data) {
+        // X5 WebView 的文件选择回调分为高低 API 两套，必须消费后置空，避免下次选择复用旧回调。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (mUploadCallbackForHighApi == null) {
                 return;
@@ -291,6 +292,7 @@ public class WebFragment extends Fragment {
         calendarFallbackOpened = false;
         if (webView != null) {
             String targetUrl = getCurrentOrInitialUrl();
+            // 某些页面首次失败时 webView.getUrl() 为空，此时按初始地址重新加载。
             if (TextUtils.isEmpty(webView.getUrl()) && !TextUtils.isEmpty(targetUrl)) {
                 webView.loadUrl(targetUrl);
             } else {
@@ -329,6 +331,7 @@ public class WebFragment extends Fragment {
     }
 
     public String getCurrentOrInitialUrl() {
+        // 工具页可能已经跳转到站内子页面，优先返回 WebView 当前地址。
         if (webView != null && !TextUtils.isEmpty(webView.getUrl())) {
             return webView.getUrl();
         }
@@ -346,6 +349,7 @@ public class WebFragment extends Fragment {
         if (!isCalendarUrl(url)) {
             return;
         }
+        // asoul.love 在部分真机 WebView 中会重置连接，用移动 Chrome UA 和 Cookie 支持提升兼容性。
         webSettings.setUserAgentString(CALENDAR_CHROME_USER_AGENT);
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -402,6 +406,7 @@ public class WebFragment extends Fragment {
             return;
         }
         calendarFallbackOpened = true;
+        // 日历站在 WebView 主文档失败时直接兜底浏览器，避免用户停留在错误页。
         progressBar.setVisibility(View.GONE);
         try {
             if (getActivity() == null) {

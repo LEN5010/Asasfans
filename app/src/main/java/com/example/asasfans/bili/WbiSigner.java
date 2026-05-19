@@ -38,6 +38,9 @@ public class WbiSigner {
         return signToQuery(params, System.currentTimeMillis() / 1000);
     }
 
+    /**
+     * 测试可注入时间戳，避免 WBI 签名结果随当前时间变化。
+     */
     synchronized String signToQuery(Map<String, String> params, long timestampSeconds) {
         if (isEmpty(imgKey) || isEmpty(subKey)) {
             throw new IllegalStateException("WBI keys are not initialized");
@@ -61,6 +64,9 @@ public class WbiSigner {
         return query.toString();
     }
 
+    /**
+     * 按 Bilibili 的固定映射表重排 img/sub key，生成 32 位 mixin key。
+     */
     static String mixinKey(String rawKey) {
         StringBuilder builder = new StringBuilder();
         for (int index : MIXIN_KEY_ENC_TAB) {
@@ -74,6 +80,9 @@ public class WbiSigner {
         return builder.toString();
     }
 
+    /**
+     * WBI 签名要求接近 encodeURIComponent 的百分号编码，不能直接用 Java 默认表单编码。
+     */
     static String encodeURIComponent(String value) {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         StringBuilder encoded = new StringBuilder();

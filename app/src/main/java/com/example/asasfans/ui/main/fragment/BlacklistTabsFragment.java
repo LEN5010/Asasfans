@@ -93,6 +93,7 @@ public class BlacklistTabsFragment extends Fragment {
     }
 
     private void showEditDialog() {
+        // 导入导出弹窗复用同一份布局，根据当前表名动态切换文案和示例。
         TextView exportToClip = dialogView.findViewById(R.id.export_to_clip);
         TextView copyFromClip = dialogView.findViewById(R.id.copy_from_clip);
         TextView importFromEdittext = dialogView.findViewById(R.id.import_from_edittext);
@@ -203,6 +204,7 @@ public class BlacklistTabsFragment extends Fragment {
         for (Row row : rows) {
             values.add(row.deleteValue);
         }
+        // 导出使用删除值列，保证再次导入时仍是数据库真正的唯一键。
         String content = ApiConfig.listToString(values, "\n");
         ClipboardManager cm = (ClipboardManager) requireActivity().getSystemService(Context.CLIPBOARD_SERVICE);
         cm.setPrimaryClip(ClipData.newPlainText(getDialogTitle(), content));
@@ -214,6 +216,7 @@ public class BlacklistTabsFragment extends Fragment {
             Toast.makeText(getActivity(),"请输入内容",Toast.LENGTH_SHORT).show();
             return;
         }
+        // 兼容旧版 tag.xxx.uid~mid.xxx.uid 的一键导入格式。
         if (input.startsWith("tag.") && input.endsWith(".uid")) {
             importLegacyBlacklist(input);
             refreshRows();
@@ -223,6 +226,7 @@ public class BlacklistTabsFragment extends Fragment {
         DBOpenHelper dbOpenHelper = new DBOpenHelper(getActivity(),"blackList.db",null,DBOpenHelper.DB_VERSION);
         SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
         try {
+            // 订阅 UP 允许昵称和备注包含逗号，所以只按换行分隔；其他名单支持换行/逗号/加号快速输入。
             String[] lines = "subscribedUp".equals(table) ? input.split("\\n") : input.split("[\\n,+，]+");
             for (String raw : lines) {
                 String value = raw.trim();
@@ -258,6 +262,7 @@ public class BlacklistTabsFragment extends Fragment {
     }
 
     private void insertSubscribedUp(SQLiteDatabase sqliteDatabase, String raw) {
+        // 订阅 UP 支持 uid、uid+昵称、uid+昵称+备注三种人工维护格式。
         String[] fields = raw.split("[,，]", 3);
         String mid = fields[0].trim();
         if (!isNumeric(mid)) {
@@ -321,6 +326,7 @@ public class BlacklistTabsFragment extends Fragment {
         if (blacklistTabsAdapter == null || !isAdded()) {
             return;
         }
+        // ViewPager2 会缓存子 Fragment，重新进入名单管理时需要主动重新读库。
         loadRowsFromDb();
         blacklistTabsAdapter.notifyDataSetChanged();
     }
@@ -334,6 +340,7 @@ public class BlacklistTabsFragment extends Fragment {
         if (context == null || table == null) {
             return;
         }
+        // rows 是 Adapter 的同一个引用，刷新时清空并回填即可触发最小范围的数据更新。
         rows.clear();
         DBOpenHelper dbOpenHelper = new DBOpenHelper(context,"blackList.db",null,DBOpenHelper.DB_VERSION);
         SQLiteDatabase sqliteDatabase = dbOpenHelper.getReadableDatabase();
@@ -406,6 +413,7 @@ public class BlacklistTabsFragment extends Fragment {
                 if (position == RecyclerView.NO_POSITION) {
                     return;
                 }
+                // 每个 Tab 的 deleteColumn 就是该表的唯一键列，删除时按键值精确匹配。
                 DBOpenHelper dbOpenHelper = new DBOpenHelper(context,"blackList.db",null,DBOpenHelper.DB_VERSION);
                 SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
                 sqliteDatabase.delete(table, deleteColumn + "=?", new String[]{rowList.get(position).deleteValue});

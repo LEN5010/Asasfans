@@ -18,6 +18,7 @@ public class QConstructor {
     public String toString(){
         StringBuilder tmp = new StringBuilder();
         for (int i = 0; i < qArrays.size(); i++){
+            // 多组查询条件用 ~ 分隔，接口侧会按字段和逻辑类型解析。
             tmp.append(qArrays.toString());
             if (i != qArrays.size() - 1){
                 tmp.append("~");
@@ -45,6 +46,7 @@ public class QConstructor {
             if (keywords.size() == 0){
                 tmp.append(".");
             }
+            // pubdate 查询允许两个空 keyword，必须保留一个空字段占位。
             //为了兼容pubdate
             if (keywords.size() == 2 && keywords.get(0).equals("") && keywords.get(1).equals("")){
                 tmp.append(".");

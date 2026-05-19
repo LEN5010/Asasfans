@@ -17,6 +17,9 @@ public final class VideoPlaybackModeStore {
     private VideoPlaybackModeStore() {
     }
 
+    /**
+     * 读取持久化播放模式，异常或未知值统一回退到 App 内播放。
+     */
     public static String getMode(Context context) {
         SharedPreferences preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         return normalizeMode(preferences.getString(KEY_MODE, MODE_APP));
@@ -26,6 +29,9 @@ public final class VideoPlaybackModeStore {
         return MODE_EXTERNAL.equals(getMode(context));
     }
 
+    /**
+     * 侧边栏播放模式按钮使用二态切换，并立即写入本地偏好。
+     */
     public static String toggle(Context context) {
         String nextMode = nextMode(getMode(context));
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -43,6 +49,9 @@ public final class VideoPlaybackModeStore {
         return MODE_EXTERNAL.equals(normalizeMode(mode)) ? MODE_APP : MODE_EXTERNAL;
     }
 
+    /**
+     * 把播放模式转换成侧边栏菜单文案，保证 UI 和实际状态一致。
+     */
     public static String menuTitle(String mode) {
         return MODE_EXTERNAL.equals(normalizeMode(mode)) ? "播放模式：跳转B站" : "播放模式：App播放";
     }

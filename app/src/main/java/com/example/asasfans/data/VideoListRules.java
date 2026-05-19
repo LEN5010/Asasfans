@@ -16,6 +16,9 @@ public class VideoListRules {
     private VideoListRules() {
     }
 
+    /**
+     * 屏蔽词是宽匹配，会命中标题、简介和分区名，不用于精确 Tag 判断。
+     */
     public static boolean matchesBlackWord(String title, String desc, String tag, String tname, Iterable<String> words) {
         String haystack = normalize(title) + "\n" + normalize(desc) + "\n" + normalize(tname);
         for (String word : words) {
@@ -27,6 +30,9 @@ public class VideoListRules {
         return false;
     }
 
+    /**
+     * 屏蔽 Tag 只做逗号分隔后的精确匹配，避免一个短词误伤整页视频。
+     */
     public static boolean matchesBlackTag(String tag, Iterable<String> blockedTags) {
         Set<String> videoTags = new HashSet<>(parseTags(tag));
         if (videoTags.isEmpty()) {
@@ -41,6 +47,9 @@ public class VideoListRules {
         return false;
     }
 
+    /**
+     * 后端 tag 字段是逗号分隔字符串，先归一化再参与过滤和列表移除。
+     */
     public static List<String> parseTags(String tag) {
         List<String> tags = new ArrayList<>();
         if (tag == null) {
@@ -57,6 +66,9 @@ public class VideoListRules {
         return tags;
     }
 
+    /**
+     * 本地订阅 UP 不额外拉流，只在当前批次中把订阅 UP 的视频排到前面。
+     */
     public static int compareSubscribedUp(long leftMid, long rightMid, Set<Long> subscribedMids) {
         boolean leftSubscribed = subscribedMids.contains(leftMid);
         boolean rightSubscribed = subscribedMids.contains(rightMid);
@@ -66,6 +78,9 @@ public class VideoListRules {
         return leftSubscribed ? -1 : 1;
     }
 
+    /**
+     * 珈乐内容按固定 UID 和文本关键词统一过滤，应用于所有视频列表入口。
+     */
     public static boolean isCarolRelated(long mid, String title, String desc, String tag, String ownerName) {
         if (mid == CAROL_MID) {
             return true;

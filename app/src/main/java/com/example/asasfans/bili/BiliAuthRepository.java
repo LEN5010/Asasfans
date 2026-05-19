@@ -23,6 +23,9 @@ public class BiliAuthRepository {
         this.credentialStore = credentialStore;
     }
 
+    /**
+     * 获取二维码登录 URL 和轮询 key，UI 层负责把 URL 渲染成二维码。
+     */
     public BiliModels.QrGenerateResponse generateQrCode() throws IOException {
         BiliModels.QrGenerateResponse response = apiClient.get(QR_GENERATE_URL, BiliModels.QrGenerateResponse.class);
         if (response == null || !response.isSuccess() || response.data == null) {
@@ -31,6 +34,9 @@ public class BiliAuthRepository {
         return response;
     }
 
+    /**
+     * 轮询扫码状态；扫码成功时从响应头提取登录 Cookie 并保存 refresh token。
+     */
     public BiliModels.QrPollResponse pollQrCode(String qrcodeKey) throws IOException {
         HttpUrl url = BiliApiClient.urlBuilder(QR_POLL_URL)
                 .addQueryParameter("qrcode_key", qrcodeKey)
@@ -54,6 +60,9 @@ public class BiliAuthRepository {
         }
     }
 
+    /**
+     * nav 未登录也可能返回 wbi_img，视频接口签名逻辑会依赖这个响应。
+     */
     public BiliModels.NavResponse getNav() throws IOException {
         return apiClient.get(NAV_URL, BiliModels.NavResponse.class);
     }

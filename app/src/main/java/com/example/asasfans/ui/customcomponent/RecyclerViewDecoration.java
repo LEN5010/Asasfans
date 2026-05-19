@@ -75,7 +75,7 @@ public class RecyclerViewDecoration extends RecyclerView.ItemDecoration {
                 horizontalColumnOne(outRect, position, count);
             }
         } else if (parent.getLayoutManager() instanceof StaggeredGridLayoutManager) { // 流布局
-            //TODO 瀑布流布局相关
+            // 当前瀑布流列表使用默认间距，后续如需要再按 spanIndex 单独计算边距。
         }
     }
 

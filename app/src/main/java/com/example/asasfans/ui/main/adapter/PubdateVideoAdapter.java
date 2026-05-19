@@ -83,6 +83,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
     }
 
     public static String[] tagFormat(String tag){
+        // 列表数据里的 tag 字段可能混用逗号和空白，统一交给过滤规则解析。
         List<String> tags = VideoListRules.parseTags(tag);
         return tags.toArray(new String[0]);
     }
@@ -114,6 +115,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
     }
 
     private void openVideo(int position) {
+        // 视频卡片点击行为由侧边栏的全局播放模式决定。
         if (VideoPlaybackModeStore.isExternalMode(mContext)) {
             openExternalVideo(position);
         } else {
@@ -127,6 +129,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
         }
         String bvid = resultBeans.get(position).getBvid();
         try {
+            // 优先唤起 B 站 App，失败后再回退浏览器并把 BV 号复制给用户。
             Intent it = new Intent();
             it.setAction(Intent.ACTION_VIEW);
             it.setData(Uri.parse("bilibili://video/" + bvid));
@@ -149,6 +152,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
             return;
         }
         AdvancedSearchDataBean.DataBean.ResultBean video = resultBeans.get(position);
+        // 订阅 UP 是本地列表，不调用 B 站关注接口。
         DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
         SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
         try {
@@ -181,6 +185,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
 
     private void removeVideosByMid(long mid) {
         int removedCount = 0;
+        // 从尾部删除可避免索引移动导致漏删。
         for (int i = resultBeans.size() - 1; i >= 0; i--) {
             if (resultBeans.get(i).getMid() == mid) {
                 resultBeans.remove(i);
@@ -194,6 +199,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
 
     private void removeVideosByTags(List<String> tags) {
         int removedCount = 0;
+        // 屏蔽 Tag 后立即移除当前批次所有精确命中的视频，反馈比只删当前项更符合预期。
         for (int i = resultBeans.size() - 1; i >= 0; i--) {
             if (VideoListRules.matchesBlackTag(resultBeans.get(i).getTag(), tags)) {
                 resultBeans.remove(i);
@@ -226,6 +232,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                 videoUpdateTime.setText(stampToDatetime(String.valueOf(resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getPubdate())));
                 dialog_black_list_video_desc.setText(resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getDesc());
 
+                // 弹窗里的 Tag 多选框每次打开都按当前视频重建，避免复用上一个视频的状态。
                 flexboxLayout.removeAllViews();
                 checkBoxs.clear();
                 String[] tagList = tagFormat(resultBeans.get(videoViewHolder.getBindingAdapterPosition()).getTag());
@@ -252,6 +259,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
                         try {
                             DBOpenHelper dbOpenHelper = new DBOpenHelper(mContext,"blackList.db",null,DBOpenHelper.DB_VERSION);
                             SQLiteDatabase sqliteDatabase = dbOpenHelper.getWritableDatabase();
+                            // 视频黑名单保留卡片展示字段，名单页和后续过滤都可以直接使用。
                             ContentValues values = new ContentValues();
                             values.put("bvid", video.getBvid());
                             values.put("PicUrl", video.getPic());
@@ -332,6 +340,7 @@ public class PubdateVideoAdapter extends RecyclerView.Adapter<VideoViewHolder> {
 
                             for (String tmp : tags){
                                 values.clear();
+                                // 屏蔽选中 Tag 写入 blackTag，语义是精确 Tag 匹配，不再污染屏蔽词。
                                 values.put("tag", tmp);
                                 sqliteDatabase.insertWithOnConflict("blackTag", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                                 Log.i("blacklistTag", tmp);

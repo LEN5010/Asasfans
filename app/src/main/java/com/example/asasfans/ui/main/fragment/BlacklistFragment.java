@@ -42,6 +42,7 @@ public class BlacklistFragment extends Fragment {
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
+                // 子 Tab 被 ViewPager2 缓存时，切回来要重新读取数据库里的最新名单。
                 refreshLoadedTabs();
             }
         };
@@ -60,6 +61,7 @@ public class BlacklistFragment extends Fragment {
     }
 
     private void refreshLoadedTabs() {
+        // 只刷新已经创建过的子 Fragment，未创建的 Tab 会在 onCreateView 时首次读库。
         for (Fragment fragment : getChildFragmentManager().getFragments()) {
             if (fragment instanceof BlacklistTabsFragment) {
                 ((BlacklistTabsFragment) fragment).refreshRowsIfReady();

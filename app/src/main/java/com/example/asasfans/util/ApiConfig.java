@@ -35,6 +35,7 @@ public class ApiConfig {
     }
 
     public String getUrl(){
+        // 旧视频接口仍使用查询字符串拼接，调用方负责传入已经编码好的 q/tname 等字段。
         url = BASE_URL + PATH_VIDEO
                 + "order=" + order
                 + "&q=" + q
@@ -78,6 +79,7 @@ public class ApiConfig {
     }
 
     public ApiConfig fromString(String url){
+        // 从已生成的接口地址恢复分页和筛选条件，供刷新/加载更多复用。
         this.page = Integer.valueOf(getOneParameter(url, "page"));
         this.order = getOneParameter(url, "order");
         this.q = getOneParameter(url, "q");
@@ -88,6 +90,7 @@ public class ApiConfig {
     }
 
     public static String listToString(List<String> list, String s) {
+        // Android 老版本不统一可用 String.join，这里保留手写 join。
         StringBuilder sb = new StringBuilder();
         if (list != null && list.size() > 0) {
             for (int i = 0; i < list.size(); i++) {

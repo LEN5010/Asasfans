@@ -186,6 +186,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
         player.addListener(new Player.Listener() {
             @Override
             public void onPlayerError(PlaybackException error) {
+                // DASH CDN 或音视频分轨失败时，第一时间降级到 MP4，保留可播放性。
                 if (!mp4FallbackTried && currentCid > 0) {
                     Toast.makeText(BiliVideoDetailActivity.this, R.string.bili_play_mp4_fallback, Toast.LENGTH_SHORT).show();
                     fallbackToMp4(currentCid);
@@ -196,6 +197,9 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 全屏只调整当前播放页布局和系统 UI，不重建播放器，避免切换时打断播放。
+     */
     private void setFullscreen(boolean enabled) {
         if (fullscreen == enabled) {
             return;
@@ -256,6 +260,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void loadVideoDetail() {
+        // 详情接口返回 aid/cid/pages/owner，是后续播放、评论和订阅按钮的共同入口。
         executor.execute(() -> {
             try {
                 BiliModels.VideoViewResponse response = videoRepository.getVideoView(bvid);
@@ -290,6 +295,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void setupPageSpinner() {
+        // 分 P 切换会重置 cid，并重新加载当前分 P 的播放地址和评论。
         List<String> pageNames = new ArrayList<>();
         if (pages.isEmpty()) {
             pageNames.add("P1");
@@ -322,6 +328,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void loadSelectedPage() {
+        // 切换分 P 后清空用户清晰度选择，先用自动清晰度重新取流。
         currentCid = getSelectedCid();
         selectedQn = 0;
         mp4FallbackTried = false;
@@ -341,6 +348,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void loadDashPlayback(long cid, boolean refreshQualityOptions) {
+        // DASH 是首选路径；获取或选轨失败时统一在 UI 线程进入 MP4 兜底。
         executor.execute(() -> {
             try {
                 BiliModels.PlayUrlResponse playUrl = videoRepository.getDashPlayUrl(bvid, cid, selectedQn);
@@ -362,6 +370,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void bindQualityOptions(List<BiliModels.VideoQuality> qualities) {
+        // 绑定 Spinner 时会触发选择回调，用 bindingQualitySpinner 屏蔽这次初始化事件。
         List<BiliModels.VideoQuality> displayQualities = qualities == null || qualities.isEmpty()
                 ? new ArrayList<>()
                 : new ArrayList<>(qualities);
@@ -397,6 +406,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
 
     @OptIn(markerClass = UnstableApi.class)
     private void playDash(String videoUrl, String audioUrl) {
+        // DASH 视频和音频是两个独立 m4s，Media3 通过 MergingMediaSource 合并播放。
         mp4FallbackTried = false;
         OkHttpDataSource.Factory factory = apiClient.newMediaDataSourceFactory(BiliVideoRepository.videoReferer(bvid));
         MediaSource videoSource = new ProgressiveMediaSource.Factory(factory)
@@ -409,6 +419,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void fallbackToMp4(long cid) {
+        // MP4 兜底只尝试一次，避免播放器错误回调导致无限重试。
         mp4FallbackTried = true;
         executor.execute(() -> {
             try {
@@ -435,6 +446,7 @@ public class BiliVideoDetailActivity extends AppCompatActivity {
     }
 
     private void loadComments(boolean reset) {
+        // 评论分页与播放分页独立；切分 P 时会重置评论列表重新加载第一页。
         if (aid <= 0 || commentsLoading) {
             return;
         }

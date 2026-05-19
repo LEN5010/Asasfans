@@ -19,6 +19,9 @@ public class BiliCommentRepository {
         this.apiClient = apiClient;
     }
 
+    /**
+     * 加载视频根评论列表；当前产品只读展示，不调用发评、回复或点赞接口。
+     */
     public BiliModels.ReplyResponse getVideoReplies(long aid, int page, int sort) throws IOException {
         HttpUrl url = BiliApiClient.urlBuilder(REPLY_URL)
                 .addQueryParameter("type", String.valueOf(COMMENT_TYPE_VIDEO))

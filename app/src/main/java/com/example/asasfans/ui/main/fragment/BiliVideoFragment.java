@@ -180,6 +180,7 @@ public class BiliVideoFragment extends Fragment {
     }
 
     private void startLoad(boolean reset) {
+        // 普通视频流支持自动补页：当前页过滤后太少时继续扫描后续页补齐。
         if (isLoadingMore) {
             return;
         }
@@ -226,6 +227,7 @@ public class BiliVideoFragment extends Fragment {
                         LocalBlockRules rules = loadLocalBlockRules();
                         int addVideoCount = 0;
                         List<AdvancedSearchDataBean.DataBean.ResultBean> visiblePageBeans = new ArrayList<>();
+                        // 先过滤，再对本页可见结果按订阅 UP 做局部前置排序。
                         for (int i = 0; i < allResultBeans.size(); i++){
                             AdvancedSearchDataBean.DataBean.ResultBean bean = allResultBeans.get(i);
                             if (!isBlocked(bean, rules)) {
@@ -280,6 +282,7 @@ public class BiliVideoFragment extends Fragment {
     }
 
     private void requestMoreForCurrentLoad() {
+        // 最多连续补扫几页，避免黑名单过宽时陷入无限请求。
         if (scanPageCount >= MAX_FILTER_SCAN_PAGES) {
             finishLoad();
             if (loadRawCount > 0 && resultBeans.size() == loadStartSize) {

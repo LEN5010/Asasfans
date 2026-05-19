@@ -232,8 +232,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
         public void run() {
             Message msg = new Message();
             Bundle data = new Bundle();
-            // TODO
-            // 在这里进行 http request.网络请求相关操作
+            // 手动检查版本直接请求 GitHub latest release 接口，失败时交给 Handler 统一提示。
             OkHttpClient client = new OkHttpClient.Builder().readTimeout(5, TimeUnit.SECONDS).build();
             Request request = new Request.Builder().url(latestVersion)
                     .get().build();
@@ -255,6 +254,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
     private void handleLatestReleaseJson(String val) {
         try {
             GithubVersionBean githubVersionBean = new Gson().fromJson(val, GithubVersionBean.class);
+            // GitHub tag 与 Android versionCode 按同一规则换算，避免字符串版本比较出错。
             int versionCode = parseReleaseVersionCode(githubVersionBean == null ? null : githubVersionBean.getTag_name());
             if (versionCode > getVersionCode(ConfigActivity.this)) {
                 showUpgradeDialog(githubVersionBean);
@@ -296,6 +296,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
         if (tagName == null) {
             return -1;
         }
+        // v1.3.5 -> 135，与 build.gradle 中的 versionCode 对齐。
         String normalized = tagName.startsWith("v") ? tagName.substring(1) : tagName;
         String[] versionCodeString = normalized.split("\\.");
         if (versionCodeString.length < 3) {

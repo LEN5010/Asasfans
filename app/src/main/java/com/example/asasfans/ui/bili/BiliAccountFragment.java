@@ -128,6 +128,7 @@ public class BiliAccountFragment extends Fragment {
         refreshQr.setOnClickListener(v -> generateQrCode());
         MaterialButton logout = view.findViewById(R.id.account_logout);
         logout.setOnClickListener(v -> {
+            // 退出登录同时清理本地凭据和 WebView Cookie，避免两种登录方式状态不一致。
             authRepository.logout();
             CookieManager.getInstance().removeAllCookies(null);
             CookieManager.getInstance().flush();
@@ -155,6 +156,7 @@ public class BiliAccountFragment extends Fragment {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                // 密码登录走官方网页，页面结束后只同步 Cookie，不接触用户密码。
                 syncWebCookiesAndCheck();
             }
         });
@@ -181,6 +183,7 @@ public class BiliAccountFragment extends Fragment {
     }
 
     private void loadAccountStatus(boolean generateQrWhenLoggedOut) {
+        // 登录态统一以 nav 接口为准，本地 Cookie 存在但过期时也会回到未登录态。
         executor.execute(() -> {
             try {
                 BiliModels.NavResponse nav = authRepository.getNav();
@@ -231,6 +234,7 @@ public class BiliAccountFragment extends Fragment {
         loginStatus.setText(R.string.bili_qr_loading);
         executor.execute(() -> {
             try {
+                // 二维码内容由 B 站返回，App 只负责渲染和轮询扫码状态。
                 BiliModels.QrGenerateResponse response = authRepository.generateQrCode();
                 Bitmap bitmap = createQrBitmap(response.data.url);
                 currentQrKey = response.data.qrcodeKey;
@@ -268,6 +272,7 @@ public class BiliAccountFragment extends Fragment {
             if (destroyed) {
                 return;
             }
+            // B 站二维码状态码：0 成功，86101 未扫码，86090 待确认，86038 已过期。
             if (code == 0) {
                 loginStatus.setText(R.string.bili_login_success);
                 mainHandler.removeCallbacks(pollRunnable);
@@ -291,6 +296,7 @@ public class BiliAccountFragment extends Fragment {
         if (destroyed) {
             return;
         }
+        // B 站登录 Cookie 可能落在 passport 和 www 两个域，两个域都同步一遍。
         String passportCookie = CookieManager.getInstance().getCookie("https://passport.bilibili.com");
         String biliCookie = CookieManager.getInstance().getCookie("https://www.bilibili.com");
         credentialStore.saveFromCookieString(passportCookie);
@@ -304,6 +310,7 @@ public class BiliAccountFragment extends Fragment {
         if (destroyed || qrPanel.getVisibility() != View.VISIBLE) {
             return;
         }
+        // 轮询只在二维码面板可见时继续，切到密码登录或离开页面会停止。
         mainHandler.removeCallbacks(pollRunnable);
         mainHandler.postDelayed(pollRunnable, POLL_DELAY_MS);
     }
@@ -328,6 +335,7 @@ public class BiliAccountFragment extends Fragment {
             return;
         }
         activity.runOnUiThread(() -> {
+            // 异步请求返回时 Fragment 可能已经切页销毁，二次检查可避免 requireActivity 崩溃。
             if (!destroyed && isAdded()) {
                 runnable.run();
             }

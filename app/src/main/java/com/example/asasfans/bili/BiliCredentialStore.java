@@ -64,6 +64,9 @@ public class BiliCredentialStore {
         }
     }
 
+    /**
+     * 登录二维码成功后会返回多个 Set-Cookie，这里只落库 App 后续需要的敏感字段。
+     */
     public void saveFromSetCookieHeaders(List<String> setCookieHeaders) {
         SharedPreferences.Editor editor = preferences.edit();
         for (String header : setCookieHeaders) {
@@ -73,6 +76,9 @@ public class BiliCredentialStore {
         editor.apply();
     }
 
+    /**
+     * WebView 密码登录完成后从 CookieManager 同步 Cookie 到加密存储。
+     */
     public void saveFromCookieString(String cookieHeader) {
         if (isEmpty(cookieHeader)) {
             return;
@@ -86,6 +92,9 @@ public class BiliCredentialStore {
         editor.apply();
     }
 
+    /**
+     * 拼接请求头 Cookie；不要日志输出返回值，里面包含 SESSDATA 等敏感凭据。
+     */
     public String buildCookieHeader() {
         StringBuilder builder = new StringBuilder();
         appendCookie(builder, KEY_SESSDATA);
@@ -96,6 +105,9 @@ public class BiliCredentialStore {
         return builder.toString();
     }
 
+    /**
+     * 退出登录只清本地凭据，不调用 Bilibili 服务端注销。
+     */
     public void clear() {
         preferences.edit().clear().apply();
     }

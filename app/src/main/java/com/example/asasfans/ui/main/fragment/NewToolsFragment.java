@@ -94,6 +94,7 @@ public class NewToolsFragment extends Fragment {
     }
 
     private void randomText(){
+        // 工具选择弹窗随机展示一个站点提示，避免固定长文挤占注意力。
         int min = 0;
         int max = tipList.size();
         Random random = new Random();
@@ -116,6 +117,7 @@ public class NewToolsFragment extends Fragment {
     }
 
     public WebFragment current(){
+        // 工具页只维护一个子 WebFragment，刷新/复制/浏览器打开都基于它的当前 URL。
         return (WebFragment) getChildFragmentManager().findFragmentById(R.id.frameLayout);
     }
 
@@ -148,6 +150,7 @@ public class NewToolsFragment extends Fragment {
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // 刷新优先作用于当前站内页面；只有子 Fragment 缺失时才重建默认工具页。
                 if (mRotateAnimation == null) {
                     mRotateAnimation = new RotateAnimation(0, 360,
                             Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
@@ -177,6 +180,7 @@ public class NewToolsFragment extends Fragment {
             public void onClick(View view) {
                 WebFragment current = current();
                 if (current != null) {
+                    // 打开浏览器也使用当前 WebView URL，保留站内跳转后的分享语义。
                     current.openCurrentUrlInBrowser();
                 } else {
                     Intent intent= new Intent();
@@ -230,6 +234,7 @@ public class NewToolsFragment extends Fragment {
     }
 
     private void dropDown(){
+        // 每次打开站点选择器时重建 Adapter，确保站点列表和当前主题样式同步。
         recyclerView = dialogView.findViewById(R.id.tools_recyclerview);
         tips = dialogView.findViewById(R.id.tips);
         NewToolsAdapter toolsAdapter = new NewToolsAdapter(getActivity(), webInfos);
@@ -268,6 +273,7 @@ public class NewToolsFragment extends Fragment {
     }
 
     public void updateFragment(int index){
+        // 切换工具站点时替换子 WebFragment，并同步标题与图标。
         FragmentManager fragmentManager = getChildFragmentManager();
         FragmentTransaction transaction = fragmentManager.beginTransaction();;
         transaction.replace(R.id.frameLayout, WebFragment.newInstance(webInfos.get(index).getWebUrl(), false));
@@ -375,6 +381,7 @@ public class NewToolsFragment extends Fragment {
         }
     }
     public static int getResource(String imageName, Context c) {
+        // 工具站点配置只保存 drawable 名称，运行时解析为资源 id。
         int resId = c.getResources().getIdentifier(imageName, "drawable", c.getPackageName());
         return resId;
     }

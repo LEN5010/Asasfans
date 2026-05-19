@@ -132,6 +132,7 @@ public class SubscribedUpVideoFragment extends Fragment {
     }
 
     private void loadVideos(boolean reset) {
+        // 订阅流按本地订阅 UP 逐个拉取，刷新时清空旧数据并从第一页重新合并。
         if (isLoadingMore) {
             return;
         }
@@ -156,6 +157,7 @@ public class SubscribedUpVideoFragment extends Fragment {
     }
 
     private LoadResult loadPage(List<SubscribedUp> subscribedUps, int loadingPage) throws Exception {
+        // 每个 UP 请求同一页投稿后按发布时间合并，去重后再应用本地过滤规则。
         LoadResult loadResult = new LoadResult();
         if (subscribedUps.isEmpty()) {
             return loadResult;
@@ -219,6 +221,7 @@ public class SubscribedUpVideoFragment extends Fragment {
 
     private String errorMessage(Exception e) {
         String message = e == null ? null : e.getMessage();
+        // 匿名访问 Bilibili 投稿归档经常遇到风控，给用户明确的登录建议。
         if (isAnonymousRiskError(e, message)) {
             return getString(R.string.subscribed_up_anonymous_risk_error);
         }
@@ -274,6 +277,7 @@ public class SubscribedUpVideoFragment extends Fragment {
     }
 
     private LocalBlockRules loadLocalBlockRules() {
+        // 订阅 UP 视频栏复用普通视频流的屏蔽规则，避免同一视频在不同 Tab 表现不一致。
         LocalBlockRules rules = new LocalBlockRules();
         DBOpenHelper dbOpenHelper = new DBOpenHelper(requireContext(), "blackList.db", null, DBOpenHelper.DB_VERSION);
         SQLiteDatabase db = dbOpenHelper.getReadableDatabase();

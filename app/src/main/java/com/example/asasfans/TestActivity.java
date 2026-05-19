@@ -229,6 +229,7 @@ public class TestActivity extends AppCompatActivity {
             return;
         }
         if (!latestVersionJson.startsWith("{\"url\"")) {
+            // 启动页可能返回网关错误文本，这种情况下直接跳过升级弹窗。
             return;
         }
         try {
@@ -262,6 +263,7 @@ public class TestActivity extends AppCompatActivity {
         if (tagName == null) {
             return -1;
         }
+        // Release tag 使用 v1.3.5 这种格式，转为 135 后和 Android versionCode 对比。
         String normalized = tagName.startsWith("v") ? tagName.substring(1) : tagName;
         String[] versionCodeString = normalized.split("\\.");
         if (versionCodeString.length < 3) {
@@ -299,6 +301,7 @@ public class TestActivity extends AppCompatActivity {
     private void configureTopAppBar() {
         int statusBarHeight = AsApplication.Companion.getStatusBarHeight();
         ViewGroup.LayoutParams layoutParams = topAppBar.getLayoutParams();
+        // 工具栏吃掉状态栏高度，避免内容被刘海/状态栏遮挡。
         layoutParams.height = (int) (56 * getResources().getDisplayMetrics().density) + statusBarHeight;
         topAppBar.setLayoutParams(layoutParams);
         topAppBar.setPadding(topAppBar.getPaddingLeft(), statusBarHeight, topAppBar.getPaddingRight(), topAppBar.getPaddingBottom());
@@ -309,6 +312,7 @@ public class TestActivity extends AppCompatActivity {
         topAppBar.setOnMenuItemClickListener(item -> {
             WebFragment webFragment = getCurrentDirectWebFragment();
             if (webFragment == null) {
+                // 工具页有自己的站内工具栏，主 Toolbar actions 只处理直属 Web 页。
                 return false;
             }
             int itemId = item.getItemId();
@@ -344,6 +348,7 @@ public class TestActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_lists) {
                 selectPage(5);
             } else if (itemId == R.id.nav_play_mode) {
+                // 播放模式是全局开关，不切换页面，只更新菜单标题和当前选中态。
                 String mode = VideoPlaybackModeStore.toggle(TestActivity.this);
                 updatePlaybackModeMenuItem();
                 updateNavigationState(viewPager.getCurrentItem());
@@ -366,6 +371,7 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void updateNavigationState(int position) {
+        // ViewPager2 禁止滑动后，侧边栏和 toolbar 标题仍统一从当前位置同步。
         if (position == 0) {
             navigationView.setCheckedItem(R.id.nav_video);
             topAppBar.setTitle(R.string.nav_video);
@@ -385,6 +391,7 @@ public class TestActivity extends AppCompatActivity {
             navigationView.setCheckedItem(R.id.nav_lists);
             topAppBar.setTitle(R.string.nav_lists);
         }
+        // 音乐和日历是直属 WebFragment，显示主 Toolbar 的网页操作按钮。
         updateWebActionVisibility(position == 1 || position == 3);
     }
 
@@ -466,6 +473,7 @@ public class TestActivity extends AppCompatActivity {
             }
         });
         HashMap map = new HashMap();
+        // X5 官方建议开启这两个选项以减少首次加载耗时。
         map.put(TbsCoreSettings.TBS_SETTINGS_USE_SPEEDY_CLASSLOADER, true);
         map.put(TbsCoreSettings.TBS_SETTINGS_USE_DEXLOADER_SERVICE, true);
         QbSdk.initTbsSettings(map);
@@ -526,6 +534,7 @@ public class TestActivity extends AppCompatActivity {
                                 }
                             });
                             if (isNoLongerShowFloatingBall == null){
+                                // 第一次被拒绝时弹出解释弹窗，之后按用户选择记录处理。
                                 dialogP.show();
                             }else if (isNoLongerShowFloatingBall.equals("yes")){
                                 aCache.put("isShowFloatingBall", "no");
@@ -591,6 +600,7 @@ public class TestActivity extends AppCompatActivity {
             ((WebFragment)mCurrentFragment).onKeyDown(keyCode, event);
             return true;
         }else if(mCurrentFragment instanceof NewToolsFragment){
+            // 工具页内部嵌套 WebFragment，需要把返回键转交给当前工具网页处理。
             WebFragment currentWebFragment = ((NewToolsFragment) mCurrentFragment).current();
             if (currentWebFragment != null) {
                 currentWebFragment.onKeyDown(keyCode, event);
@@ -615,6 +625,7 @@ public class TestActivity extends AppCompatActivity {
         if (viewPager == null) {
             return null;
         }
+        // FragmentStateAdapter 默认 tag 为 f + position。
         return getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
     }
 
@@ -687,6 +698,7 @@ public class TestActivity extends AppCompatActivity {
 
     private void acquireRuntimeLocks() {
         try {
+            // WakeLock/WifiLock 只在未持有时申请，避免重复 acquire/release 造成异常。
             if (wl != null && !wl.isHeld()) {
                 wl.acquire();
             }
@@ -700,6 +712,7 @@ public class TestActivity extends AppCompatActivity {
 
     private void releaseRuntimeLocks() {
         try {
+            // 生命周期切到后台时成对释放，避免常驻锁导致耗电。
             if (wl != null && wl.isHeld()) {
                 wl.release();
             }
