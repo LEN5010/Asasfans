@@ -1,5 +1,9 @@
 # Asasfans Next
 
+<p align="center">
+  <img src="app/src/main/res/mipmap-xxxhdpi/icon_asasfans_next_logo.png" alt="Asasfans Next" width="120" />
+</p>
+
 Asasfans Next 是一个面向 A-SOUL 粉丝的 Android 客户端，整合了视频浏览、Bilibili 登录、App 内播放、评论区浏览、订阅 UP、黑名单、音乐、工具、日历和设置等功能。
 
 本项目保留了早期开源项目 [A-SoulFan/as-as-fans](https://github.com/A-SoulFan/as-as-fans) 的历史来源，后续由当前仓库继续维护和重构，并继续遵循 GPL-2.0 协议发布。
